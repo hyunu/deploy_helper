@@ -1,0 +1,39 @@
+# 환경 설정
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+
+# Node.js
+node_modules/
+dist/
+.npm
+*.log
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# 업로드 파일 (로컬 개발용)
+server/uploads/
