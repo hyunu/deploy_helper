@@ -47,12 +47,8 @@ async def check_update(
             detail="등록되지 않은 앱입니다"
         )
     
-    # 최신 활성 버전 조회
-    latest_version = db.query(AppVersion).filter(
-        AppVersion.app_id == app.id,
-        AppVersion.channel == channel,
-        AppVersion.is_active == True
-    ).order_by(desc(AppVersion.created_at)).first()
+    # 최신 활성 버전 조회 (버전 번호 기준)
+    latest_version = get_latest_active_version(db, app.id, channel)
     
     if not latest_version:
         return UpdateCheckResponse(
@@ -96,6 +92,21 @@ async def check_update(
     )
 
 
+def get_latest_active_version(db: Session, app_db_id: int, channel: ReleaseChannel):
+    """활성 버전 중 버전 번호가 가장 높은 것을 반환"""
+    versions = db.query(AppVersion).filter(
+        AppVersion.app_id == app_db_id,
+        AppVersion.channel == channel,
+        AppVersion.is_active == True
+    ).all()
+    
+    if not versions:
+        return None
+    
+    # 버전 번호 기준으로 정렬하여 최신 버전 반환
+    return max(versions, key=lambda v: parse_version(v.version))
+
+
 @router.get("/download/latest/{app_id}")
 async def download_latest(
     app_id: str,
@@ -105,17 +116,13 @@ async def download_latest(
     """
     최신 버전 다운로드 (공개 페이지용)
     
-    앱 ID로 최신 버전을 바로 다운로드
+    앱 ID로 최신 활성 버전을 바로 다운로드 (버전 번호 기준)
     """
     app = db.query(App).filter(App.app_id == app_id).first()
     if not app:
         raise HTTPException(status_code=404, detail="앱을 찾을 수 없습니다")
     
-    latest_version = db.query(AppVersion).filter(
-        AppVersion.app_id == app.id,
-        AppVersion.channel == channel,
-        AppVersion.is_active == True
-    ).order_by(desc(AppVersion.created_at)).first()
+    latest_version = get_latest_active_version(db, app.id, channel)
     
     if not latest_version:
         raise HTTPException(status_code=404, detail="다운로드 가능한 버전이 없습니다")
@@ -186,7 +193,10 @@ async def get_version_history(
         AppVersion.app_id == app.id,
         AppVersion.channel == channel,
         AppVersion.is_active == True
-    ).order_by(desc(AppVersion.created_at)).limit(limit).all()
+    ).all()
+    
+    # 버전 번호 기준 내림차순 정렬
+    sorted_versions = sorted(versions, key=lambda v: parse_version(v.version), reverse=True)[:limit]
     
     return {
         "app_id": app_id,
@@ -199,6 +209,6 @@ async def get_version_history(
                 "published_at": v.published_at,
                 "file_size": v.file_size
             }
-            for v in versions
+            for v in sorted_versions
         ]
     }
