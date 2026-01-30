@@ -294,6 +294,194 @@ const HTML_TEMPLATES = [
   </a>
 </div>`,
   },
+  {
+    id: 'version-history',
+    name: '버전 히스토리',
+    icon: '📜',
+    description: 'API에서 버전 목록을 자동으로 불러와 표시',
+    html: `<!-- 버전 히스토리 (API에서 자동 로드) -->
+<div class="max-w-2xl mx-auto p-6">
+  <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+    <span>📜</span> 버전 히스토리
+  </h2>
+  
+  <!-- 버전 목록 컨테이너 -->
+  <div id="version-history-list" class="space-y-4">
+    <div class="text-center py-8 text-gray-500">
+      <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+      버전 정보를 불러오는 중...
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const appId = '{{APP_ID}}';
+  const container = document.getElementById('version-history-list');
+  
+  fetch('/api/update/history/' + appId + '?limit=10')
+    .then(res => res.json())
+    .then(data => {
+      if (!data.versions || data.versions.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">등록된 버전이 없습니다.</p>';
+        return;
+      }
+      
+      container.innerHTML = data.versions.map((v, i) => \`
+        <div class="bg-white border rounded-xl p-4 \${i === 0 ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-lg">v\${v.version}</span>
+              \${i === 0 ? '<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">최신</span>' : ''}
+              \${v.is_mandatory ? '<span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">필수</span>' : ''}
+            </div>
+            <span class="text-sm text-gray-500">\${v.published_at ? new Date(v.published_at).toLocaleDateString('ko-KR') : ''}</span>
+          </div>
+          \${v.release_notes ? '<p class="text-gray-600 text-sm whitespace-pre-line">' + v.release_notes + '</p>' : ''}
+          \${v.file_size ? '<p class="text-xs text-gray-400 mt-2">파일 크기: ' + (v.file_size / 1024 / 1024).toFixed(2) + ' MB</p>' : ''}
+        </div>
+      \`).join('');
+    })
+    .catch(err => {
+      container.innerHTML = '<p class="text-center text-red-500 py-8">버전 정보를 불러올 수 없습니다.</p>';
+    });
+})();
+</script>`,
+  },
+  {
+    id: 'full-product-with-history',
+    name: '풀 페이지 + 버전 히스토리',
+    icon: '🏆',
+    description: '히어로 + 기능 + 다운로드 + 버전 히스토리 통합',
+    html: `<!-- 풀 프로덕트 페이지 + 버전 히스토리 -->
+<div class="min-h-screen">
+  <!-- 히어로 섹션 -->
+  <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-20">
+    <div class="container mx-auto px-4 text-center">
+      <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 mx-auto mb-6 rounded-2xl shadow-2xl" onerror="this.style.display='none'">
+      <h1 class="text-5xl font-bold mb-4">{{APP_NAME}}</h1>
+      <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">{{APP_DESCRIPTION}}</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-xl font-semibold transition shadow-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          무료 다운로드
+        </a>
+        <a href="#versions" class="inline-flex items-center justify-center gap-2 border border-gray-600 hover:border-gray-500 px-8 py-4 rounded-xl font-semibold transition">
+          버전 히스토리
+        </a>
+      </div>
+      <!-- 최신 버전 정보 -->
+      <p id="latest-version-badge" class="mt-6 text-sm text-gray-400"></p>
+    </div>
+  </div>
+
+  <!-- 기능 섹션 -->
+  <div class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12">주요 기능</h2>
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div class="text-center p-6">
+          <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-3xl">⚡</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">빠른 성능</h3>
+          <p class="text-gray-600">최적화된 코드로 빠르고 안정적으로 동작합니다.</p>
+        </div>
+        <div class="text-center p-6">
+          <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-3xl">🔄</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">자동 업데이트</h3>
+          <p class="text-gray-600">새 버전이 나오면 자동으로 업데이트됩니다.</p>
+        </div>
+        <div class="text-center p-6">
+          <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-3xl">🔒</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">안전한 보안</h3>
+          <p class="text-gray-600">데이터를 안전하게 암호화하여 보호합니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 버전 히스토리 섹션 -->
+  <div id="versions" class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-4">버전 히스토리</h2>
+      <p class="text-gray-600 text-center mb-12">{{APP_NAME}}의 업데이트 내역</p>
+      
+      <div id="version-history-container" class="max-w-2xl mx-auto space-y-4">
+        <div class="text-center py-8">
+          <div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p class="text-gray-500">버전 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다운로드 CTA -->
+  <div class="py-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center">
+    <h2 class="text-3xl font-bold mb-4">지금 시작하세요</h2>
+    <p class="mb-8 opacity-90">무료로 다운로드하고 사용해보세요</p>
+    <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-opacity-90 transition shadow-lg">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      다운로드
+    </a>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="py-8 bg-slate-900 text-gray-400 text-center text-sm">
+    <p>© 2024 {{APP_NAME}}. All rights reserved.</p>
+  </footer>
+</div>
+
+<script>
+(function() {
+  const appId = '{{APP_ID}}';
+  const container = document.getElementById('version-history-container');
+  const badge = document.getElementById('latest-version-badge');
+  
+  fetch('/api/update/history/' + appId + '?limit=10')
+    .then(res => res.json())
+    .then(data => {
+      if (!data.versions || data.versions.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">등록된 버전이 없습니다.</p>';
+        return;
+      }
+      
+      // 최신 버전 배지 표시
+      const latest = data.versions[0];
+      badge.innerHTML = 'v' + latest.version + ' • ' + (latest.published_at ? new Date(latest.published_at).toLocaleDateString('ko-KR') : '');
+      
+      container.innerHTML = data.versions.map((v, i) => \`
+        <div class="bg-white border rounded-xl p-5 shadow-sm \${i === 0 ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl font-bold">v\${v.version}</span>
+              \${i === 0 ? '<span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">최신 버전</span>' : ''}
+              \${v.is_mandatory ? '<span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">필수 업데이트</span>' : ''}
+            </div>
+            <span class="text-sm text-gray-500">\${v.published_at ? new Date(v.published_at).toLocaleDateString('ko-KR') : ''}</span>
+          </div>
+          \${v.release_notes ? '<div class="text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded-lg text-sm">' + v.release_notes + '</div>' : '<p class="text-gray-400 text-sm">릴리즈 노트가 없습니다.</p>'}
+          <div class="flex items-center justify-between mt-3 text-xs text-gray-400">
+            <span>\${v.file_size ? '파일 크기: ' + (v.file_size / 1024 / 1024).toFixed(2) + ' MB' : ''}</span>
+            \${i === 0 ? '<a href="{{DOWNLOAD_URL}}" class="text-blue-600 hover:underline font-medium">다운로드 →</a>' : ''}
+          </div>
+        </div>
+      \`).join('');
+    })
+    .catch(err => {
+      container.innerHTML = '<p class="text-center text-red-500 py-8">버전 정보를 불러올 수 없습니다.</p>';
+    });
+})();
+</script>`,
+  },
 ]
 
 // CSS 프레임워크별 기본 템플릿 (CSS + HTML)
