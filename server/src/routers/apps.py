@@ -121,12 +121,21 @@ async def get_public_app(
             detail="비공개 앱입니다"
         )
     
-    # 최신 활성 버전 조회
-    latest_version = db.query(AppVersion).filter(
+    # 최신 활성 버전 조회 (버전 번호 기준)
+    active_versions = db.query(AppVersion).filter(
         AppVersion.app_id == app.id,
         AppVersion.channel == ReleaseChannel.STABLE,
         AppVersion.is_active == True
-    ).order_by(desc(AppVersion.created_at)).first()
+    ).all()
+    
+    # 버전 번호 기준으로 최신 버전 선택
+    def parse_version(version: str) -> tuple:
+        try:
+            return tuple(int(p) for p in version.split("."))
+        except (ValueError, AttributeError):
+            return (0, 0, 0)
+    
+    latest_version = max(active_versions, key=lambda v: parse_version(v.version)) if active_versions else None
     
     return AppPublicResponse(
         app_id=app.app_id,
