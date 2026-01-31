@@ -9,6 +9,7 @@ import AppEditPage from './pages/AppEditPage'
 import UploadPage from './pages/UploadPage'
 import UsersPage from './pages/UsersPage'
 import PublicAppPage from './pages/PublicAppPage'
+import PublicAppsPage from './pages/PublicAppsPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -25,6 +26,7 @@ function App() {
     <Routes>
       {/* 공개 페이지 (인증 불필요) */}
       <Route path="/p/:appId" element={<PublicAppPage />} />
+      <Route path="/public-apps" element={<PublicAppsPage />} />
       
       {/* 로그인 */}
       <Route path="/login" element={<LoginPage />} />

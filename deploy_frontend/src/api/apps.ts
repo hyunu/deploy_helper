@@ -117,6 +117,11 @@ export const getPublicApp = async (appId: string): Promise<PublicApp> => {
   return response.data
 }
 
+export const getPublicAppsList = async (): Promise<AppListResponse> => {
+  const response = await apiClient.get('/apps/public')
+  return response.data
+}
+
 // Versions API
 export const getVersions = async (appId: string): Promise<VersionListResponse> => {
   const response = await apiClient.get(`/apps/${appId}/versions`)

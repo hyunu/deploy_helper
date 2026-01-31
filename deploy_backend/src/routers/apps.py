@@ -150,6 +150,19 @@ async def get_public_app(
     )
 
 
+@router.get("/public", response_model=AppListResponse)
+async def get_public_apps_list(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """공개 앱 목록 조회 (인증 불필요)"""
+    query = db.query(App).filter(App.is_public == True)
+    total = query.count()
+    apps = query.offset(skip).limit(limit).all()
+    return AppListResponse(apps=apps, total=total)
+
+
 @router.delete("/{app_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_app(
     app_id: str,

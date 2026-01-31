@@ -28,14 +28,26 @@
 
 ### 1. 환경 설정
 
+`docker-compose.yml` 파일에서 사용하는 환경 변수들을 설정합니다. `.env.example` 파일을 `.env`로 복사하고, 필요한 값들을 수정하여 사용하세요.
+
 ```bash
 # 환경 파일 복사
-cp env.example .env
+cp .env.example .env
 
-# .env 파일 수정 (필수: DB_PASSWORD, SECRET_KEY 변경)
+# .env 파일 수정
 nano .env
 ```
-_`DEFAULT_ADMIN_EMAIL`과 `DEFAULT_ADMIN_PASSWORD` 환경 변수를 제거하여 기본 계정 정보를 없앴으므로, `.env` 파일에 `ADMIN_EMAIL`과 `ADMIN_PASSWORD`를 직접 설정해야 합니다._
+
+**`.env` 파일 주요 변수 설명:**
+
+*   `API_PORT`: 백엔드 API 서버 포트 (기본값: `8000`)
+*   `WEB_PORT`: 프론트엔드 웹 서버 포트 (기본값: `3000`)
+*   `DB_PASSWORD`: PostgreSQL 데이터베이스 `postgres` 유저 비밀번호 (필수 변경!)
+*   `SECRET_KEY`: 백엔드 API 인증을 위한 시크릿 키 (필수 변경!)
+*   `ADMIN_EMAIL`: 초기 관리자 계정 이메일 (기본값: `admin@company.com`)
+*   `ADMIN_PASSWORD`: 초기 관리자 계정 비밀번호 (기본값: `admin123`)
+
+> `.env` 파일에 `ADMIN_EMAIL`과 `ADMIN_PASSWORD`를 직접 설정해야 초기 관리자 계정을 사용할 수 있습니다. 첫 로그인 후에는 비밀번호를 변경하는 것을 권장합니다.
 
 ### 2. Docker로 실행
 
@@ -95,7 +107,7 @@ var updater = new AutoUpdater(new UpdaterConfig
 {
     ServerUrl = "http://배포서버주소:8000",  // Deploy Helper 서버 URL
     AppId = "com.company.myapp",             // 관리자에서 등록한 앱 ID
-    CurrentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0" // 현재 앱 버전 자동 감지
+    CurrentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0"
 });
 
 // 업데이트 확인
@@ -161,12 +173,8 @@ public partial class MainWindow : Window
         // UI 스레드에서 실행
         await Dispatcher.InvokeAsync(async () =>
         {
-            var message = $"새 버전 v{info.LatestVersion}이 있습니다.
-
-" +
-                          $"{info.ReleaseNotes}
-
-" +
+            var message = $"새 버전 v{info.LatestVersion}이 있습니다.\n\n" +
+                          $"{info.ReleaseNotes}\n\n" +
                           "지금 업데이트하시겠습니까?";
 
             // 필수 업데이트인 경우
@@ -297,6 +305,7 @@ public partial class MainWindow : Window
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
+| GET | `/api/apps/public` | 공개 앱 목록 조회 |
 | GET | `/api/apps/public/{app_id}` | 공개 앱 정보 |
 | GET | `/p/{app_id}` | 앱 다운로드 페이지 |
 
