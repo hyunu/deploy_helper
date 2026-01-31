@@ -334,17 +334,27 @@ deploy_helper/
 │       │   ├── AppEditPage.tsx
 │       │   └── PublicAppPage.tsx
 │       └── components/
-├── client/                 # .NET 클라이언트 라이브러리
-│   ├── DeployHelper.Client/
-│   │   ├── AutoUpdater.cs      # 자동 업데이트 클래스
-│   │   ├── UpdaterConfig.cs    # 설정 클래스
-│   │   └── UpdateInfo.cs       # 업데이트 정보 클래스
-│   └── DeployHelper.Client.Sample/
-│       └── Program.cs          # 사용 예시
+├── sdk/                    # 클라이언트 SDK (언어별)
+│   ├── dotnet/             # .NET SDK (C#) ✅
+│   │   ├── DeployHelper.Client/
+│   │   └── DeployHelper.Client.Sample/
+│   ├── python/             # Python SDK ✅
+│   │   └── deploy_helper/
+│   ├── typescript/         # TypeScript SDK (예정)
+│   └── swift/              # Swift SDK (예정)
 └── scripts/                # 유틸리티 스크립트
     ├── start.sh / start.bat
     └── stop.sh / stop.bat
 ```
+
+## SDK 지원 현황
+
+| 언어 | 폴더 | 상태 | 플랫폼 |
+|------|------|------|--------|
+| **C# / .NET** | `sdk/dotnet/` | ✅ 완성 | Windows, macOS, Linux |
+| **Python** | `sdk/python/` | ✅ 완성 | Windows, macOS, Linux |
+| **TypeScript** | `sdk/typescript/` | 📋 예정 | Electron, Node.js |
+| **Swift** | `sdk/swift/` | 📋 예정 | macOS, iOS |
 
 ---
 
