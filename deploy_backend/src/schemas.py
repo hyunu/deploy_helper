@@ -108,6 +108,13 @@ class VersionCreate(VersionBase):
     pass
 
 
+class VersionUpdate(BaseModel):
+    version: Optional[str] = None
+    channel: Optional[ReleaseChannel] = None
+    release_notes: Optional[str] = None
+    is_mandatory: Optional[bool] = None
+
+
 class VersionResponse(VersionBase):
     id: int
     app_id: int

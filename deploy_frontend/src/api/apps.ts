@@ -67,6 +67,13 @@ export interface VersionListResponse {
   total: number
 }
 
+export interface UpdateVersionRequest {
+  version?: string
+  channel?: 'stable' | 'beta' | 'alpha'
+  release_notes?: string
+  is_mandatory?: boolean
+}
+
 export interface DashboardStats {
   total_apps: number
   total_versions: number
@@ -130,6 +137,15 @@ export const uploadVersion = async (
 
 export const activateVersion = async (appId: string, versionId: number): Promise<void> => {
   await apiClient.patch(`/apps/${appId}/versions/${versionId}/activate`)
+}
+
+export const updateVersion = async (
+  appId: string,
+  versionId: number,
+  data: UpdateVersionRequest
+): Promise<Version> => {
+  const response = await apiClient.patch(`/apps/${appId}/versions/${versionId}`, data)
+  return response.data
 }
 
 export const deactivateVersion = async (appId: string, versionId: number): Promise<void> => {

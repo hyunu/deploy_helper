@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
 import { format } from 'date-fns'
@@ -8,6 +9,7 @@ import {
   activateVersion,
   deactivateVersion,
   deleteVersion,
+  updateVersion,
 } from '../api/apps'
 import {
   ArrowLeft,
@@ -33,6 +35,8 @@ function formatBytes(bytes: number): string {
 export default function AppDetailPage() {
   const { appId } = useParams<{ appId: string }>()
   const queryClient = useQueryClient()
+  const [editingVersionId, setEditingVersionId] = useState<number | null>(null)
+  const [editNotes, setEditNotes] = useState('')
   
   const { data: app, isLoading: appLoading } = useQuery({
     queryKey: ['app', appId],
@@ -61,10 +65,33 @@ export default function AppDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['versions', appId] }),
   })
   
+  const updateMutation = useMutation({
+    mutationFn: ({ versionId, releaseNotes }: { versionId: number; releaseNotes: string }) =>
+      updateVersion(appId!, versionId, { release_notes: releaseNotes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['versions', appId] })
+      setEditingVersionId(null)
+    },
+  })
+  
   const handleDelete = (versionId: number, version: string) => {
     if (confirm(`버전 ${version}을(를) 삭제하시겠습니까?`)) {
       deleteMutation.mutate(versionId)
     }
+  }
+
+  const startEditing = (versionId: number, currentNotes: string | null) => {
+    setEditingVersionId(versionId)
+    setEditNotes(currentNotes || '')
+  }
+
+  const cancelEditing = () => {
+    setEditingVersionId(null)
+    setEditNotes('')
+  }
+
+  const handleUpdateNotes = (versionId: number) => {
+    updateMutation.mutate({ versionId, releaseNotes: editNotes })
   }
   
   if (appLoading || versionsLoading) {
@@ -134,20 +161,9 @@ export default function AppDetailPage() {
           </h2>
         </div>
         
-        {versionsData?.versions.length === 0 ? (
-          <div className="p-12 text-center">
-            <Upload className="w-12 h-12 text-gray-300 mx-auto" />
-            <p className="mt-4 text-gray-500">등록된 버전이 없습니다</p>
-            <Link
-              to={`/apps/${appId}/upload`}
-              className="mt-4 inline-block text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              첫 번째 버전 업로드하기
-            </Link>
-          </div>
-        ) : (
+        {versionsData?.versions && versionsData.versions.length > 0 ? (
           <div className="divide-y divide-gray-200">
-            {versionsData?.versions.map((version) => (
+            {versionsData.versions.map((version) => (
               <div
                 key={version.id}
                 className={`px-6 py-4 ${!version.is_active ? 'bg-gray-50' : ''}`}
@@ -227,15 +243,68 @@ export default function AppDetailPage() {
                   </div>
                 </div>
                 
-                {version.release_notes && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                      {version.release_notes}
-                    </p>
-                  </div>
-                )}
+                <div className="mt-3">
+                  {editingVersionId === version.id ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none min-h-[100px]"
+                        placeholder="릴리즈 노트를 입력하세요..."
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={cancelEditing}
+                          className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={() => handleUpdateNotes(version.id)}
+                          disabled={updateMutation.isPending}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {updateMutation.isPending ? '저장 중...' : '저장'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="group relative p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          {version.release_notes ? (
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                              {version.release_notes}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-400 italic">릴리즈 노트가 없습니다</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => startEditing(version.id, version.release_notes)}
+                          className="ml-2 p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-1"
+                          title="릴리즈 노트 편집"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span className="text-xs font-medium">편집</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <Upload className="w-12 h-12 text-gray-300 mx-auto" />
+            <p className="mt-4 text-gray-500">등록된 버전이 없습니다</p>
+            <Link
+              to={`/apps/${appId}/upload`}
+              className="mt-4 inline-block text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              첫 번째 버전 업로드하기
+            </Link>
           </div>
         )}
       </div>

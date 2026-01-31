@@ -10,7 +10,7 @@ from typing import Optional
 
 from ..database import get_db
 from ..models import App, AppVersion, User, ReleaseChannel
-from ..schemas import VersionResponse, VersionListResponse
+from ..schemas import VersionResponse, VersionListResponse, VersionUpdate
 from ..auth import get_current_active_user
 from ..config import get_settings
 
@@ -173,6 +173,37 @@ async def get_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="버전을 찾을 수 없습니다"
         )
+    
+    return version
+
+
+@router.patch("/{version_id}", response_model=VersionResponse)
+async def update_version(
+    app_id: str,
+    version_id: int,
+    version_update: VersionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """버전 정보 수정 (릴리즈 노트 등)"""
+    app = db.query(App).filter(App.app_id == app_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="앱을 찾을 수 없습니다")
+    
+    version = db.query(AppVersion).filter(
+        AppVersion.id == version_id,
+        AppVersion.app_id == app.id
+    ).first()
+    
+    if not version:
+        raise HTTPException(status_code=404, detail="버전을 찾을 수 없습니다")
+    
+    update_data = version_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(version, key, value)
+    
+    db.commit()
+    db.refresh(version)
     
     return version
 

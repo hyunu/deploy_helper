@@ -17,7 +17,7 @@ echo ""
 # .env 파일 확인
 if [ ! -f ".env" ]; then
     echo "[정보] .env 파일이 없습니다. 예시 파일을 복사합니다..."
-    cp env.example .env
+    cp .env.example .env
     echo "[경고] .env 파일의 비밀번호를 변경하세요!"
     echo ""
 fi
