@@ -90,7 +90,7 @@ export default function LoginPage() {
         </div>
         
         <div className="relative z-10 text-sm text-blue-200">
-          © 2024 Deploy Helper. All rights reserved.
+          © 2024 Hyunu Factory. All rights reserved. Commercial use allowed.
         </div>
       </div>
       
