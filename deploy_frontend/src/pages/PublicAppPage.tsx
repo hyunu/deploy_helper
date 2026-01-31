@@ -255,6 +255,7 @@ export default function PublicAppPage() {
   const { appId } = useParams<{ appId: string }>()
   const [tailwindLoaded, setTailwindLoaded] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const landingPageRef = useRef<HTMLDivElement>(null)
 
   const {
     data: app,
@@ -285,6 +286,48 @@ export default function PublicAppPage() {
       document.head.appendChild(script)
     }
   }, [isLandingPage, tailwindLoaded])
+
+  // 랜딩 페이지 모드에서 이미지 제거
+  useEffect(() => {
+    if (landingPageRef.current && app?.detail_html && isLandingPage) {
+      const removeImages = () => {
+        const el = landingPageRef.current
+        if (!el) return
+
+        // 모든 이미지 제거
+        const images = el.querySelectorAll('img')
+        images.forEach((img) => {
+          const src = img.getAttribute('src') || ''
+          const alt = img.getAttribute('alt') || ''
+          if (src.includes('placeholder') || 
+              src.includes('icon') || 
+              alt.includes('App') || 
+              alt.includes('앱')) {
+            img.remove()
+          }
+        })
+        
+        // 그라데이션 배경을 가진 첫 번째 div 제거
+        const firstChild = el.firstElementChild
+        if (firstChild) {
+          const style = window.getComputedStyle(firstChild)
+          const classes = firstChild.className || ''
+          const bgImage = style.backgroundImage
+          
+          if ((bgImage && bgImage !== 'none' && bgImage.includes('gradient')) ||
+              classes.includes('gradient') ||
+              classes.includes('from-blue') ||
+              classes.includes('to-purple')) {
+            firstChild.remove()
+          }
+        }
+      }
+
+      removeImages()
+      setTimeout(removeImages, 100)
+      setTimeout(removeImages, 500)
+    }
+  }, [app?.detail_html, isLandingPage])
 
   // 상단 고정 요소 및 이미지 제거
   useEffect(() => {
@@ -318,26 +361,57 @@ export default function PublicAppPage() {
           }
         }
         
-        // 상단 이미지 제거
+        // 모든 이미지 제거 (특히 placeholder, icon 관련)
         const images = el.querySelectorAll('img')
-        images.forEach((img, index) => {
-          // 첫 번째와 두 번째 이미지 제거
-          if (index < 2) {
+        images.forEach((img) => {
+          const src = img.getAttribute('src') || ''
+          const alt = img.getAttribute('alt') || ''
+          // placeholder, icon, 또는 App 관련 이미지 모두 제거
+          if (src.includes('placeholder') || 
+              src.includes('icon') || 
+              alt.includes('App') || 
+              alt.includes('앱') ||
+              img.classList.contains('app-icon') ||
+              img.closest('.app-header')) {
             img.remove()
           }
         })
         
-        // 그라데이션 배경을 가진 상단 div 제거
-        const gradientDivs = el.querySelectorAll('div')
-        gradientDivs.forEach((div, index) => {
-          if (index < 2) {
+        // 그라데이션 배경을 가진 첫 번째 div 제거
+        const allDivs = el.querySelectorAll('div')
+        allDivs.forEach((div, index) => {
+          if (index < 3) { // 첫 3개 div 확인
             const style = window.getComputedStyle(div)
             const bgImage = style.backgroundImage
-            if (bgImage && bgImage !== 'none' && (bgImage.includes('gradient') || bgImage.includes('linear-gradient'))) {
+            const bgColor = style.backgroundColor
+            const classes = div.className || ''
+            
+            // 그라데이션 배경이 있거나 gradient 클래스를 가진 경우 제거
+            if ((bgImage && bgImage !== 'none' && (bgImage.includes('gradient') || bgImage.includes('linear-gradient'))) ||
+                classes.includes('gradient') ||
+                classes.includes('from-blue') ||
+                classes.includes('to-purple')) {
               div.remove()
+              return // 제거했으므로 다음으로
             }
           }
         })
+        
+        // 첫 번째 자식이 이미지나 그라데이션 div인 경우 제거
+        const firstChild = el.firstElementChild
+        if (firstChild) {
+          const firstStyle = window.getComputedStyle(firstChild)
+          const firstClasses = firstChild.className || ''
+          const firstBgImage = firstStyle.backgroundImage
+          
+          if (firstChild.tagName === 'IMG' ||
+              (firstBgImage && firstBgImage !== 'none' && firstBgImage.includes('gradient')) ||
+              firstClasses.includes('gradient') ||
+              firstClasses.includes('from-blue') ||
+              firstClasses.includes('to-purple')) {
+            firstChild.remove()
+          }
+        }
       }
 
       // 즉시 실행 및 약간의 지연 후 재실행 (동적 콘텐츠 대응)
@@ -383,8 +457,25 @@ export default function PublicAppPage() {
       <>
         <style>{landingPageCss}</style>
         {app.custom_css && <style>{app.custom_css}</style>}
+        {/* 랜딩 페이지 이미지 제거 CSS */}
+        <style>{`
+          /* 랜딩 페이지 내부의 이미지 제거 */
+          img[src*="placeholder"],
+          img[src*="icon"],
+          img[alt*="App"],
+          img[alt*="앱"] {
+            display: none !important;
+          }
+          
+          /* 그라데이션 배경을 가진 첫 번째 div 제거 */
+          div[class*="gradient"]:first-child,
+          div[style*="gradient"]:first-child {
+            display: none !important;
+          }
+        `}</style>
         <div className="min-h-screen bg-white">
           <div
+            ref={landingPageRef}
             dangerouslySetInnerHTML={{ __html: app.detail_html || '' }}
           />
           <footer className="py-6 text-center text-sm text-gray-400 bg-gray-100">
@@ -441,11 +532,23 @@ export default function PublicAppPage() {
           display: none !important;
         }
         
-        /* detail_html 내부의 상단 이미지 제거 */
-        .app-content img:first-child,
-        .app-content > img:first-of-type,
-        .app-content div:first-child img,
-        .app-content > div:first-child > img {
+        /* detail_html 내부의 모든 이미지 제거 */
+        .app-content img,
+        .app-content > img,
+        .app-content div img,
+        .app-content > div > img,
+        .app-content img[src*="placeholder"],
+        .app-content img[src*="icon"],
+        .app-content img[alt*="App"],
+        .app-content img[alt*="앱"] {
+          display: none !important;
+        }
+        
+        /* 그라데이션 배경을 가진 첫 번째 div 제거 */
+        .app-content > div:first-child[class*="gradient"],
+        .app-content > div:first-child[style*="gradient"],
+        .app-content div:first-child[class*="gradient"],
+        .app-content div:first-child[style*="gradient"] {
           display: none !important;
         }
       `}</style>
