@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
-import { LayoutDashboard, Package, LogOut, Upload } from 'lucide-react'
+import { LayoutDashboard, Package, LogOut, Upload, Users } from 'lucide-react'
 
 export default function Layout() {
   const location = useLocation()
@@ -51,6 +51,19 @@ export default function Layout() {
           
           {/* 사용자 정보 */}
           <div className="p-4 border-t border-gray-200">
+            {user?.is_admin && (
+              <Link
+                to="/users"
+                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors mb-2 ${
+                  isActive('/users')
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <Users className="w-5 h-5 mr-3" />
+                사용자 관리
+              </Link>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
