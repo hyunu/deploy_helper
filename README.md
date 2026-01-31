@@ -44,6 +44,7 @@ nano .env
 *   `WEB_PORT`: 프론트엔드 웹 서버 포트 (기본값: `3000`)
 *   `DB_PASSWORD`: PostgreSQL 데이터베이스 `postgres` 유저 비밀번호 (필수 변경!)
 *   `SECRET_KEY`: 백엔드 API 인증을 위한 시크릿 키 (필수 변경!)
+*   `PUBLIC_API_HOST`: 프론트엔드에서 백엔드 API에 접속할 때 사용할 호스트 이름 (원격 서버의 IP 또는 도메인)
 *   `ADMIN_EMAIL`: 초기 관리자 계정 이메일 (기본값: `admin@company.com`)
 *   `ADMIN_PASSWORD`: 초기 관리자 계정 비밀번호 (기본값: `admin123`)
 
