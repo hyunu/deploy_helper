@@ -286,7 +286,7 @@ export default function PublicAppPage() {
     }
   }, [isLandingPage, tailwindLoaded])
 
-  // 상단 고정 요소 제거
+  // 상단 고정 요소 및 이미지 제거
   useEffect(() => {
     if (contentRef.current && app?.detail_html) {
       const removeFixedElements = () => {
@@ -317,6 +317,27 @@ export default function PublicAppPage() {
             secondChild.remove()
           }
         }
+        
+        // 상단 이미지 제거
+        const images = el.querySelectorAll('img')
+        images.forEach((img, index) => {
+          // 첫 번째와 두 번째 이미지 제거
+          if (index < 2) {
+            img.remove()
+          }
+        })
+        
+        // 그라데이션 배경을 가진 상단 div 제거
+        const gradientDivs = el.querySelectorAll('div')
+        gradientDivs.forEach((div, index) => {
+          if (index < 2) {
+            const style = window.getComputedStyle(div)
+            const bgImage = style.backgroundImage
+            if (bgImage && bgImage !== 'none' && (bgImage.includes('gradient') || bgImage.includes('linear-gradient'))) {
+              div.remove()
+            }
+          }
+        })
       }
 
       // 즉시 실행 및 약간의 지연 후 재실행 (동적 콘텐츠 대응)
@@ -380,7 +401,7 @@ export default function PublicAppPage() {
       {/* 커스텀 CSS 적용 */}
       {app.custom_css && <style>{app.custom_css}</style>}
       
-      {/* 상단 고정 요소 제거 CSS */}
+      {/* 상단 고정 요소 및 이미지 제거 CSS */}
       <style>{`
         /* 상단 고정 헤더/배너 제거 */
         header[style*="fixed"],
@@ -411,21 +432,28 @@ export default function PublicAppPage() {
         div[style*="background"][style*="sticky"]:first-child {
           display: none !important;
         }
+        
+        /* 앱 아이콘 이미지 제거 */
+        .app-icon,
+        img.app-icon,
+        .app-header img,
+        .app-header > img {
+          display: none !important;
+        }
+        
+        /* detail_html 내부의 상단 이미지 제거 */
+        .app-content img:first-child,
+        .app-content > img:first-of-type,
+        .app-content div:first-child img,
+        .app-content > div:first-child > img {
+          display: none !important;
+        }
       `}</style>
 
       <div className="min-h-screen bg-gray-50">
         <div className="app-detail-container">
           {/* 헤더 영역 */}
           <div className="app-header">
-            {app.icon_url ? (
-              <img src={app.icon_url} alt={`${app.name} Icon`} className="app-icon mx-auto" />
-            ) : (
-              <div className="app-icon mx-auto bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <span className="text-4xl text-white font-bold">
-                  {app.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
             <h1 className="app-title">{app.name}</h1>
             {app.description && <p className="app-description">{app.description}</p>}
 
