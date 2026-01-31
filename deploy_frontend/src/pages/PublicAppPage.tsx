@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Download, AlertCircle } from 'lucide-react'
 import { getPublicApp } from '../api/apps'
 
@@ -254,6 +254,7 @@ const landingPageCss = `
 export default function PublicAppPage() {
   const { appId } = useParams<{ appId: string }>()
   const [tailwindLoaded, setTailwindLoaded] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const {
     data: app,
@@ -284,6 +285,46 @@ export default function PublicAppPage() {
       document.head.appendChild(script)
     }
   }, [isLandingPage, tailwindLoaded])
+
+  // 상단 고정 요소 제거
+  useEffect(() => {
+    if (contentRef.current && app?.detail_html) {
+      const removeFixedElements = () => {
+        const el = contentRef.current
+        if (!el) return
+
+        // 상단 고정 요소 제거
+        const fixedElements = el.querySelectorAll('[style*="fixed"], [style*="sticky"], [class*="fixed"], [class*="sticky"]')
+        fixedElements.forEach((elem) => {
+          const style = window.getComputedStyle(elem)
+          if (style.position === 'fixed' || style.position === 'sticky') {
+            elem.remove()
+          }
+        })
+        
+        // 첫 번째와 두 번째 자식 요소가 고정 요소인 경우 제거
+        const firstChild = el.firstElementChild
+        const secondChild = firstChild?.nextElementSibling
+        if (firstChild) {
+          const firstStyle = window.getComputedStyle(firstChild)
+          if (firstStyle.position === 'fixed' || firstStyle.position === 'sticky') {
+            firstChild.remove()
+          }
+        }
+        if (secondChild) {
+          const secondStyle = window.getComputedStyle(secondChild)
+          if (secondStyle.position === 'fixed' || secondStyle.position === 'sticky') {
+            secondChild.remove()
+          }
+        }
+      }
+
+      // 즉시 실행 및 약간의 지연 후 재실행 (동적 콘텐츠 대응)
+      removeFixedElements()
+      setTimeout(removeFixedElements, 100)
+      setTimeout(removeFixedElements, 500)
+    }
+  }, [app?.detail_html])
 
   const handleDownload = () => {
     if (app?.download_url) {
@@ -338,6 +379,39 @@ export default function PublicAppPage() {
     <>
       {/* 커스텀 CSS 적용 */}
       {app.custom_css && <style>{app.custom_css}</style>}
+      
+      {/* 상단 고정 요소 제거 CSS */}
+      <style>{`
+        /* 상단 고정 헤더/배너 제거 */
+        header[style*="fixed"],
+        header[style*="sticky"],
+        .fixed-top,
+        .sticky-top,
+        [style*="position: fixed"],
+        [style*="position:fixed"],
+        [style*="position: sticky"],
+        [style*="position:sticky"],
+        [class*="fixed"],
+        [class*="sticky"] {
+          display: none !important;
+        }
+        
+        /* 상단에 위치한 고정 요소 제거 */
+        body > header:first-child,
+        body > div:first-child > header,
+        body > div:first-child > div[style*="fixed"],
+        body > div:first-child > div[style*="sticky"],
+        body > div:first-child[style*="fixed"],
+        body > div:first-child[style*="sticky"],
+        /* 그라데이션 배경을 가진 상단 요소 */
+        div[style*="gradient"][style*="fixed"],
+        div[style*="gradient"][style*="sticky"],
+        /* 어두운 회색 상단 바 */
+        div[style*="background"][style*="fixed"]:first-child,
+        div[style*="background"][style*="sticky"]:first-child {
+          display: none !important;
+        }
+      `}</style>
 
       <div className="min-h-screen bg-gray-50">
         <div className="app-detail-container">
@@ -379,6 +453,7 @@ export default function PublicAppPage() {
           {/* 상세 콘텐츠 */}
           {app.detail_html && (
             <div
+              ref={contentRef}
               className="app-content"
               dangerouslySetInnerHTML={{ __html: app.detail_html }}
             />
