@@ -141,7 +141,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="block w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400"
-                      placeholder="admin@company.com"
+                      placeholder="이메일을 입력하세요"
                     />
                   </div>
                 </div>
@@ -186,12 +186,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-            
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <p className="text-center text-sm text-gray-500">
-                기본 계정: <span className="font-medium text-gray-700">admin@company.com</span> / <span className="font-medium text-gray-700">admin123</span>
-              </p>
-            </div>
           </div>
           
           <p className="text-center text-sm text-gray-400 mt-6">
