@@ -488,72 +488,7 @@ export default function PublicAppPage() {
   // 기본 레이아웃
   return (
     <>
-      {/* 커스텀 CSS 적용 */}
-      {app.custom_css && <style>{app.custom_css}</style>}
-      
-      {/* 기본 레이아웃 CSS */}
-      <style>{`
-        .app-detail-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 2rem;
-        }
-        
-        .app-header {
-          text-align: center;
-          padding: 3rem 1rem;
-          background: white;
-          border-radius: 1rem;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          margin-bottom: 2rem;
-        }
-        
-        .app-title {
-          font-size: 2.5rem;
-          font-weight: 700;
-          color: #1a1a2e;
-          margin-bottom: 1rem;
-        }
-        
-        .app-description {
-          font-size: 1.125rem;
-          color: #666;
-          line-height: 1.6;
-          margin-bottom: 1rem;
-        }
-        
-        .app-content {
-          background: white;
-          border-radius: 1rem;
-          padding: 2rem;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .download-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.75rem 1.5rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          font-weight: 600;
-          border-radius: 0.5rem;
-          border: none;
-          cursor: pointer;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .download-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
-        .download-button:active {
-          transform: translateY(0);
-        }
-      `}</style>
-      
-      {/* 상단 고정 요소 및 이미지 제거 CSS */}
+      {/* 상단 고정 요소 및 이미지 제거 CSS (custom_css보다 먼저 적용) */}
       <style>{`
         /* 상단 고정 헤더/배너 제거 */
         header[style*="fixed"],
@@ -613,6 +548,9 @@ export default function PublicAppPage() {
           display: none !important;
         }
       `}</style>
+      
+      {/* 커스텀 CSS 적용 (이미지 제거 CSS 이후에 적용하여 우선순위 확보) */}
+      {app.custom_css && <style>{app.custom_css}</style>}
 
       <div className="min-h-screen bg-gray-50">
         <div className="app-detail-container">
