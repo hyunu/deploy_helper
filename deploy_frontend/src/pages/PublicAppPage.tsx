@@ -254,7 +254,6 @@ const landingPageCss = `
 export default function PublicAppPage() {
   const { appId } = useParams<{ appId: string }>()
   const [tailwindLoaded, setTailwindLoaded] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
   const landingPageRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -271,152 +270,46 @@ export default function PublicAppPage() {
   // 랜딩 페이지 모드 감지
   const isLandingPage = app?.detail_html?.includes('landing-page')
 
-  // Tailwind CDN 동적 로드
+  // Tailwind CDN 동적 로드 (detail_html에 tailwind 클래스가 있는 경우)
   useEffect(() => {
-    if (isLandingPage && !tailwindLoaded) {
-      const existingScript = document.querySelector('script[src*="tailwindcss"]')
-      if (existingScript) {
-        setTailwindLoaded(true)
-        return
-      }
+    if (app?.detail_html && !tailwindLoaded) {
+      // Tailwind 클래스가 있는지 확인
+      const hasTailwindClasses = /class=["'][^"']*\b(bg-|text-|p-|m-|flex|grid|rounded|shadow|hover:|focus:)/.test(app.detail_html)
       
-      const script = document.createElement('script')
-      script.src = 'https://cdn.tailwindcss.com'
-      script.onload = () => setTailwindLoaded(true)
-      document.head.appendChild(script)
+      if (hasTailwindClasses) {
+        const existingScript = document.querySelector('script[src*="tailwindcss"]')
+        if (existingScript) {
+          setTailwindLoaded(true)
+          return
+        }
+        
+        const script = document.createElement('script')
+        script.src = 'https://cdn.tailwindcss.com'
+        script.onload = () => setTailwindLoaded(true)
+        document.head.appendChild(script)
+      }
     }
-  }, [isLandingPage, tailwindLoaded])
+  }, [app?.detail_html, tailwindLoaded])
 
-  // 랜딩 페이지 모드에서 이미지 제거
+  // 상단 고정 요소만 제거 (사용자가 작성한 HTML/CSS는 그대로 유지)
   useEffect(() => {
-    if (landingPageRef.current && app?.detail_html && isLandingPage) {
-      const removeImages = () => {
+    if (landingPageRef.current && app?.detail_html) {
+      const removeFixedHeader = () => {
         const el = landingPageRef.current
         if (!el) return
 
-        // 모든 이미지 제거
-        const images = el.querySelectorAll('img')
-        images.forEach((img) => {
-          const src = img.getAttribute('src') || ''
-          const alt = img.getAttribute('alt') || ''
-          if (src.includes('placeholder') || 
-              src.includes('icon') || 
-              alt.includes('App') || 
-              alt.includes('앱')) {
-            img.remove()
-          }
-        })
-        
-        // 그라데이션 배경을 가진 첫 번째 div 제거
-        const firstChild = el.firstElementChild
-        if (firstChild) {
-          const style = window.getComputedStyle(firstChild)
-          const classes = firstChild.className || ''
-          const bgImage = style.backgroundImage
-          
-          if ((bgImage && bgImage !== 'none' && bgImage.includes('gradient')) ||
-              classes.includes('gradient') ||
-              classes.includes('from-blue') ||
-              classes.includes('to-purple')) {
-            firstChild.remove()
-          }
-        }
-      }
-
-      removeImages()
-      setTimeout(removeImages, 100)
-      setTimeout(removeImages, 500)
-    }
-  }, [app?.detail_html, isLandingPage])
-
-  // 상단 고정 요소 및 이미지 제거
-  useEffect(() => {
-    if (contentRef.current && app?.detail_html) {
-      const removeFixedElements = () => {
-        const el = contentRef.current
-        if (!el) return
-
-        // 상단 고정 요소 제거
-        const fixedElements = el.querySelectorAll('[style*="fixed"], [style*="sticky"], [class*="fixed"], [class*="sticky"]')
-        fixedElements.forEach((elem) => {
-          const style = window.getComputedStyle(elem)
+        // body 직계 자식 중 고정된 헤더만 제거 (시스템 레벨)
+        const bodyFirstChild = document.body.firstElementChild
+        if (bodyFirstChild && bodyFirstChild !== el) {
+          const style = window.getComputedStyle(bodyFirstChild)
           if (style.position === 'fixed' || style.position === 'sticky') {
-            elem.remove()
-          }
-        })
-        
-        // 첫 번째와 두 번째 자식 요소가 고정 요소인 경우 제거
-        const firstChild = el.firstElementChild
-        const secondChild = firstChild?.nextElementSibling
-        if (firstChild) {
-          const firstStyle = window.getComputedStyle(firstChild)
-          if (firstStyle.position === 'fixed' || firstStyle.position === 'sticky') {
-            firstChild.remove()
-          }
-        }
-        if (secondChild) {
-          const secondStyle = window.getComputedStyle(secondChild)
-          if (secondStyle.position === 'fixed' || secondStyle.position === 'sticky') {
-            secondChild.remove()
-          }
-        }
-        
-        // 모든 이미지 제거 (특히 placeholder, icon 관련)
-        const images = el.querySelectorAll('img')
-        images.forEach((img) => {
-          const src = img.getAttribute('src') || ''
-          const alt = img.getAttribute('alt') || ''
-          // placeholder, icon, 또는 App 관련 이미지 모두 제거
-          if (src.includes('placeholder') || 
-              src.includes('icon') || 
-              alt.includes('App') || 
-              alt.includes('앱') ||
-              img.classList.contains('app-icon') ||
-              img.closest('.app-header')) {
-            img.remove()
-          }
-        })
-        
-        // 그라데이션 배경을 가진 첫 번째 div 제거
-        const allDivs = el.querySelectorAll('div')
-        allDivs.forEach((div, index) => {
-          if (index < 3) { // 첫 3개 div 확인
-            const style = window.getComputedStyle(div)
-            const bgImage = style.backgroundImage
-            const classes = div.className || ''
-            
-            // 그라데이션 배경이 있거나 gradient 클래스를 가진 경우 제거
-            if ((bgImage && bgImage !== 'none' && (bgImage.includes('gradient') || bgImage.includes('linear-gradient'))) ||
-                classes.includes('gradient') ||
-                classes.includes('from-blue') ||
-                classes.includes('to-purple')) {
-              div.remove()
-              return // 제거했으므로 다음으로
-            }
-          }
-        })
-        
-        // 첫 번째 자식이 이미지나 그라데이션 div인 경우 제거 (이미 위에서 firstChild를 사용했으므로 다시 확인)
-        const firstChildElement = el.firstElementChild
-        if (firstChildElement) {
-          const firstChildStyle = window.getComputedStyle(firstChildElement)
-          const firstChildClasses = firstChildElement.className || ''
-          const firstChildBgImage = firstChildStyle.backgroundImage
-          
-          if (firstChildElement.tagName === 'IMG' ||
-              (firstChildBgImage && firstChildBgImage !== 'none' && firstChildBgImage.includes('gradient')) ||
-              firstChildClasses.includes('gradient') ||
-              firstChildClasses.includes('from-blue') ||
-              firstChildClasses.includes('to-purple')) {
-            firstChildElement.remove()
+            bodyFirstChild.remove()
           }
         }
       }
 
-      // 즉시 실행 및 약간의 지연 후 재실행 (동적 콘텐츠 대응)
-      removeFixedElements()
-      setTimeout(removeFixedElements, 100)
-      setTimeout(removeFixedElements, 500)
+      removeFixedHeader()
+      setTimeout(removeFixedHeader, 100)
     }
   }, [app?.detail_html])
 
@@ -450,147 +343,72 @@ export default function PublicAppPage() {
     )
   }
 
-  // 랜딩 페이지 모드
-  if (isLandingPage) {
+  // 사용자가 작성한 HTML과 CSS를 그대로 표시
+  // detail_html이 있으면 그것을 그대로 렌더링하고, custom_css를 적용
+  if (app.detail_html) {
     return (
       <>
-        <style>{landingPageCss}</style>
+        {/* 사용자가 작성한 CSS 적용 */}
         {app.custom_css && <style>{app.custom_css}</style>}
-        {/* 랜딩 페이지 이미지 제거 CSS */}
+        
+        {/* 상단 고정 요소만 제거 (시스템 레벨) */}
         <style>{`
-          /* 랜딩 페이지 내부의 이미지 제거 */
-          img[src*="placeholder"],
-          img[src*="icon"],
-          img[alt*="App"],
-          img[alt*="앱"] {
-            display: none !important;
-          }
-          
-          /* 그라데이션 배경을 가진 첫 번째 div 제거 */
-          div[class*="gradient"]:first-child,
-          div[style*="gradient"]:first-child {
+          /* body 직계 자식 중 고정 요소만 제거 */
+          body > header[style*="fixed"],
+          body > header[style*="sticky"],
+          body > div:first-child[style*="fixed"],
+          body > div:first-child[style*="sticky"] {
             display: none !important;
           }
         `}</style>
-        <div className="min-h-screen bg-white">
-          <div
-            ref={landingPageRef}
-            dangerouslySetInnerHTML={{ __html: app.detail_html || '' }}
-          />
-          <footer className="py-6 text-center text-sm text-gray-400 bg-gray-100">
-            Powered by Deploy Helper
-          </footer>
-        </div>
+        
+        <div
+          ref={landingPageRef}
+          dangerouslySetInnerHTML={{ __html: app.detail_html }}
+        />
+        <footer className="py-6 text-center text-sm text-gray-400 bg-gray-100">
+          Powered by Deploy Helper
+        </footer>
       </>
     )
   }
 
-  // 기본 레이아웃
+  // detail_html이 없는 경우 기본 레이아웃
   return (
     <>
-      {/* 상단 고정 요소 및 이미지 제거 CSS (custom_css보다 먼저 적용) */}
-      <style>{`
-        /* 상단 고정 헤더/배너 제거 */
-        header[style*="fixed"],
-        header[style*="sticky"],
-        .fixed-top,
-        .sticky-top,
-        [style*="position: fixed"],
-        [style*="position:fixed"],
-        [style*="position: sticky"],
-        [style*="position:sticky"],
-        [class*="fixed"],
-        [class*="sticky"] {
-          display: none !important;
-        }
-        
-        /* 상단에 위치한 고정 요소 제거 */
-        body > header:first-child,
-        body > div:first-child > header,
-        body > div:first-child > div[style*="fixed"],
-        body > div:first-child > div[style*="sticky"],
-        body > div:first-child[style*="fixed"],
-        body > div:first-child[style*="sticky"],
-        /* 그라데이션 배경을 가진 상단 요소 */
-        div[style*="gradient"][style*="fixed"],
-        div[style*="gradient"][style*="sticky"],
-        /* 어두운 회색 상단 바 */
-        div[style*="background"][style*="fixed"]:first-child,
-        div[style*="background"][style*="sticky"]:first-child {
-          display: none !important;
-        }
-        
-        /* 앱 아이콘 이미지 제거 */
-        .app-icon,
-        img.app-icon,
-        .app-header img,
-        .app-header > img {
-          display: none !important;
-        }
-        
-        /* detail_html 내부의 모든 이미지 제거 */
-        .app-content img,
-        .app-content > img,
-        .app-content div img,
-        .app-content > div > img,
-        .app-content img[src*="placeholder"],
-        .app-content img[src*="icon"],
-        .app-content img[alt*="App"],
-        .app-content img[alt*="앱"] {
-          display: none !important;
-        }
-        
-        /* 그라데이션 배경을 가진 첫 번째 div 제거 */
-        .app-content > div:first-child[class*="gradient"],
-        .app-content > div:first-child[style*="gradient"],
-        .app-content div:first-child[class*="gradient"],
-        .app-content div:first-child[style*="gradient"] {
-          display: none !important;
-        }
-      `}</style>
-      
-      {/* 커스텀 CSS 적용 (이미지 제거 CSS 이후에 적용하여 우선순위 확보) */}
+      {/* 커스텀 CSS 적용 */}
       {app.custom_css && <style>{app.custom_css}</style>}
 
       <div className="min-h-screen bg-gray-50">
-        <div className="app-detail-container">
-          {/* 헤더 영역 */}
-          <div className="app-header">
-            <h1 className="app-title">{app.name}</h1>
-            {app.description && <p className="app-description">{app.description}</p>}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{app.name}</h1>
+            {app.description && (
+              <p className="text-lg text-gray-600 mb-8">{app.description}</p>
+            )}
 
-            {/* 버전 및 다운로드 */}
-            <div className="mt-6">
-              {app.latest_version ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">
-                    최신 버전: <span className="font-semibold">v{app.latest_version}</span>
-                    {app.file_size && (
-                      <span className="ml-2">({formatBytes(app.file_size)})</span>
-                    )}
-                  </p>
-                  <button onClick={handleDownload} className="download-button">
-                    <Download className="w-5 h-5" />
-                    다운로드
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">아직 배포된 버전이 없습니다.</p>
-              )}
-            </div>
+            {app.latest_version ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">
+                  최신 버전: <span className="font-semibold">v{app.latest_version}</span>
+                  {app.file_size && (
+                    <span className="ml-2">({formatBytes(app.file_size)})</span>
+                  )}
+                </p>
+                <button
+                  onClick={handleDownload}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  다운로드
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">아직 배포된 버전이 없습니다.</p>
+            )}
           </div>
-
-          {/* 상세 콘텐츠 */}
-          {app.detail_html && (
-            <div
-              ref={contentRef}
-              className="app-content"
-              dangerouslySetInnerHTML={{ __html: app.detail_html }}
-            />
-          )}
         </div>
 
-        {/* 푸터 */}
         <footer className="mt-12 py-8 border-t border-gray-200">
           <div className="max-w-4xl mx-auto px-4 text-center text-sm text-gray-400">
             Powered by Deploy Helper
