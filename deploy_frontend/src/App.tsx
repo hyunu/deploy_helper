@@ -7,6 +7,7 @@ import AppsPage from './pages/AppsPage'
 import AppDetailPage from './pages/AppDetailPage'
 import AppEditPage from './pages/AppEditPage'
 import UploadPage from './pages/UploadPage'
+import UsersPage from './pages/UsersPage'
 import PublicAppPage from './pages/PublicAppPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -43,6 +44,7 @@ function App() {
         <Route path="apps/:appId" element={<AppDetailPage />} />
         <Route path="apps/:appId/edit" element={<AppEditPage />} />
         <Route path="apps/:appId/upload" element={<UploadPage />} />
+        <Route path="users" element={<UsersPage />} />
       </Route>
     </Routes>
   )
