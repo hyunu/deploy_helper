@@ -6,7 +6,7 @@ from .database import Base, engine, SessionLocal
 from .models import User
 from .auth import get_password_hash
 from .config import get_settings
-from .routers import auth, apps, versions, update, stats
+from .routers import auth, apps, versions, update, stats, users
 
 settings = get_settings()
 
@@ -66,6 +66,7 @@ app.include_router(apps.router)
 app.include_router(versions.router)
 app.include_router(update.router)
 app.include_router(stats.router)
+app.include_router(users.router)
 
 
 @app.get("/")
