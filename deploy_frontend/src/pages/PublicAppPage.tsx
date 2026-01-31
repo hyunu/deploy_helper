@@ -383,7 +383,6 @@ export default function PublicAppPage() {
           if (index < 3) { // 첫 3개 div 확인
             const style = window.getComputedStyle(div)
             const bgImage = style.backgroundImage
-            const bgColor = style.backgroundColor
             const classes = div.className || ''
             
             // 그라데이션 배경이 있거나 gradient 클래스를 가진 경우 제거
@@ -397,19 +396,19 @@ export default function PublicAppPage() {
           }
         })
         
-        // 첫 번째 자식이 이미지나 그라데이션 div인 경우 제거
-        const firstChild = el.firstElementChild
-        if (firstChild) {
-          const firstStyle = window.getComputedStyle(firstChild)
-          const firstClasses = firstChild.className || ''
-          const firstBgImage = firstStyle.backgroundImage
+        // 첫 번째 자식이 이미지나 그라데이션 div인 경우 제거 (이미 위에서 firstChild를 사용했으므로 다시 확인)
+        const firstChildElement = el.firstElementChild
+        if (firstChildElement) {
+          const firstChildStyle = window.getComputedStyle(firstChildElement)
+          const firstChildClasses = firstChildElement.className || ''
+          const firstChildBgImage = firstChildStyle.backgroundImage
           
-          if (firstChild.tagName === 'IMG' ||
-              (firstBgImage && firstBgImage !== 'none' && firstBgImage.includes('gradient')) ||
-              firstClasses.includes('gradient') ||
-              firstClasses.includes('from-blue') ||
-              firstClasses.includes('to-purple')) {
-            firstChild.remove()
+          if (firstChildElement.tagName === 'IMG' ||
+              (firstChildBgImage && firstChildBgImage !== 'none' && firstChildBgImage.includes('gradient')) ||
+              firstChildClasses.includes('gradient') ||
+              firstChildClasses.includes('from-blue') ||
+              firstChildClasses.includes('to-purple')) {
+            firstChildElement.remove()
           }
         }
       }
@@ -491,6 +490,68 @@ export default function PublicAppPage() {
     <>
       {/* 커스텀 CSS 적용 */}
       {app.custom_css && <style>{app.custom_css}</style>}
+      
+      {/* 기본 레이아웃 CSS */}
+      <style>{`
+        .app-detail-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 2rem;
+        }
+        
+        .app-header {
+          text-align: center;
+          padding: 3rem 1rem;
+          background: white;
+          border-radius: 1rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          margin-bottom: 2rem;
+        }
+        
+        .app-title {
+          font-size: 2.5rem;
+          font-weight: 700;
+          color: #1a1a2e;
+          margin-bottom: 1rem;
+        }
+        
+        .app-description {
+          font-size: 1.125rem;
+          color: #666;
+          line-height: 1.6;
+          margin-bottom: 1rem;
+        }
+        
+        .app-content {
+          background: white;
+          border-radius: 1rem;
+          padding: 2rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .download-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .download-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .download-button:active {
+          transform: translateY(0);
+        }
+      `}</style>
       
       {/* 상단 고정 요소 및 이미지 제거 CSS */}
       <style>{`
