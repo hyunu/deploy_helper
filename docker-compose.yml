@@ -4,7 +4,7 @@ services:
   # 배포 API 서버
   api:
     build:
-      context: ./server
+      context: ./deploy_backend
       dockerfile: Dockerfile
     container_name: deploy-api
     ports:
@@ -25,7 +25,7 @@ services:
   # 관리자 웹 대시보드
   web:
     build:
-      context: ./web
+      context: ./deploy_frontend
       dockerfile: Dockerfile
     container_name: deploy-web
     ports:

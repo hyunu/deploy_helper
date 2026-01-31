@@ -318,7 +318,7 @@ public partial class MainWindow : Window
 deploy_helper/
 ├── docker-compose.yml      # Docker 구성
 ├── .env.example            # 환경 변수 예시
-├── server/                 # API 서버 (Python FastAPI)
+├── deploy_backend/         # API 서버 (Python FastAPI)
 │   └── src/
 │       ├── main.py
 │       ├── models.py
@@ -327,7 +327,7 @@ deploy_helper/
 │           ├── apps.py     # 앱 관리 API
 │           ├── update.py   # 업데이트 API
 │           └── auth.py     # 인증 API
-├── web/                    # 관리자 대시보드 (React + TypeScript)
+├── deploy_frontend/        # 관리자 대시보드 (React + TypeScript)
 │   └── src/
 │       ├── pages/
 │       │   ├── Dashboard.tsx
