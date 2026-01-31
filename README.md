@@ -342,9 +342,10 @@ deploy_helper/
 │   │   └── deploy_helper/
 │   ├── typescript/         # TypeScript SDK (예정)
 │   └── swift/              # Swift SDK (예정)
-└── scripts/                # 유틸리티 스크립트
+└── setup/                  # 설치 및 실행 스크립트
     ├── start.sh / start.bat
-    └── stop.sh / stop.bat
+    ├── stop.sh / stop.bat
+    └── logs.sh
 ```
 
 ## SDK 지원 현황
