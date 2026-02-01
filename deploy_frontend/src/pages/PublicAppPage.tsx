@@ -31,7 +31,29 @@ export default function PublicAppPage() {
     retry: false,
   })
 
-  // Tailwind CDN 및 폰트 동적 로드
+  // 폰트 로딩 확인
+  useEffect(() => {
+    if (app?.detail_html && !fontLoaded) {
+      // LG Smart 폰트가 로드되었는지 확인
+      if ('fonts' in document) {
+        const checkFont = async () => {
+          try {
+            await (document as any).fonts.load('400 1em "LG Smart"')
+            await (document as any).fonts.load('700 1em "LG Smart"')
+            setFontLoaded(true)
+          } catch (e) {
+            // 폰트 로드 실패 시에도 계속 진행
+            setTimeout(() => setFontLoaded(true), 1000)
+          }
+        }
+        checkFont()
+      } else {
+        setTimeout(() => setFontLoaded(true), 1000)
+      }
+    }
+  }, [app?.detail_html, fontLoaded])
+
+  // Tailwind CDN 동적 로드
   useEffect(() => {
     if (app?.detail_html && !tailwindLoaded) {
       // Tailwind 클래스가 있는지 확인
@@ -50,18 +72,7 @@ export default function PublicAppPage() {
         document.head.appendChild(script)
       }
     }
-
-    // 폰트는 index.html에서 이미 로드되므로 별도 처리 불필요
-    if (app?.detail_html && !fontLoaded) {
-      // Noto Sans KR 폰트가 로드되었는지 확인
-      const fontLink = document.querySelector('link[href*="Noto+Sans+KR"]')
-      if (fontLink) {
-        setFontLoaded(true)
-      } else {
-        setTimeout(() => setFontLoaded(true), 500)
-      }
-    }
-  }, [app?.detail_html, tailwindLoaded, fontLoaded])
+  }, [app?.detail_html, tailwindLoaded])
 
   // 상단 고정 요소만 제거 (사용자가 작성한 HTML/CSS는 그대로 유지)
   useEffect(() => {
@@ -191,7 +202,9 @@ export default function PublicAppPage() {
   font-display: swap;
   src: url('/fonts/LGSmHaB.ttf') format('truetype');
 }
-* { font-family: 'LG Smart', sans-serif; }
+body, body *, * {
+  font-family: 'LG Smart', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
 `
 
   // 사용자가 작성한 HTML과 CSS를 그대로 표시
