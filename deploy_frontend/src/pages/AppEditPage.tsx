@@ -415,7 +415,7 @@ const HTML_TEMPLATES = [
           <div class="inline-block px-4 py-2 bg-gray-200 rounded-full text-sm font-medium text-gray-700 mb-6">
             제품 설명서
           </div>
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight" style="background: transparent !important;">
             {{APP_NAME}}
           </h1>
         </div>
@@ -440,7 +440,7 @@ const HTML_TEMPLATES = [
       <div class="max-w-xl">
         <!-- 설명 영역 -->
         <div class="mb-6">
-          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal">
+          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal" style="background: transparent !important;">
             {{APP_DESCRIPTION}}
           </div>
         </div>
@@ -495,7 +495,7 @@ const CSS_FRAMEWORKS = [
           <div class="inline-block px-4 py-2 bg-gray-200 rounded-full text-sm font-medium text-gray-700 mb-6">
             제품 설명서
           </div>
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight" style="background: transparent !important;">
             {{APP_NAME}}
           </h1>
         </div>
@@ -520,7 +520,7 @@ const CSS_FRAMEWORKS = [
       <div class="max-w-xl">
         <!-- 설명 영역 -->
         <div class="mb-6">
-          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal">
+          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal" style="background: transparent !important;">
             {{APP_DESCRIPTION}}
           </div>
         </div>

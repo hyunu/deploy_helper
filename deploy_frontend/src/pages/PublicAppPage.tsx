@@ -205,6 +205,9 @@ export default function PublicAppPage() {
 body, body *, * {
   font-family: 'LG Smart', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
 }
+h1, h2, h3, h4, h5, h6, p, div, span {
+  background: transparent !important;
+}
 `
 
   // 사용자가 작성한 HTML과 CSS를 그대로 표시
