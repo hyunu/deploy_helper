@@ -108,6 +108,52 @@ export default function PublicAppPage() {
     }
   }
 
+  // 아이콘이 없거나 로드 실패 시 아이콘 영역 숨기기
+  useEffect(() => {
+    if (landingPageRef.current && app?.detail_html) {
+      const hideEmptyIconArea = () => {
+        const el = landingPageRef.current
+        if (!el) return
+
+        // 아이콘 이미지 찾기
+        const iconImages = el.querySelectorAll('img[src*="{{ICON_URL}}"], img[alt*="{{APP_NAME}}"], img[src=""], img:not([src])')
+        
+        iconImages.forEach((img) => {
+          const imageElement = img as HTMLImageElement
+          
+          // src가 비어있거나 유효하지 않으면 부모 div 숨기기
+          if (!imageElement.src || imageElement.src.trim() === '' || imageElement.src.includes('{{ICON_URL}}')) {
+            const parentDiv = imageElement.closest('div[id="app-icon-container"], div.mb-8')
+            if (parentDiv) {
+              (parentDiv as HTMLElement).style.display = 'none'
+            }
+          }
+          
+          // 이미지 로드 실패 시 부모 div 숨기기
+          imageElement.onerror = () => {
+            const parentDiv = imageElement.closest('div[id="app-icon-container"], div.mb-8')
+            if (parentDiv) {
+              (parentDiv as HTMLElement).style.display = 'none'
+            }
+          }
+          
+          // 이미지가 로드되지 않았거나 너비/높이가 0이면 숨기기
+          if (imageElement.complete && (imageElement.naturalWidth === 0 || imageElement.naturalHeight === 0)) {
+            const parentDiv = imageElement.closest('div[id="app-icon-container"], div.mb-8')
+            if (parentDiv) {
+              (parentDiv as HTMLElement).style.display = 'none'
+            }
+          }
+        })
+      }
+
+      hideEmptyIconArea()
+      setTimeout(hideEmptyIconArea, 100)
+      setTimeout(hideEmptyIconArea, 500)
+      setTimeout(hideEmptyIconArea, 1000)
+    }
+  }, [app?.detail_html])
+
   // detail_html 내부의 다운로드 링크를 실제 URL로 변환
   useEffect(() => {
     if (landingPageRef.current && app) {

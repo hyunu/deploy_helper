@@ -249,12 +249,31 @@ async def get_public_app(
         if manual_download_url:
             manual_download_button = f'<a href="{manual_download_url}" class="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition">[사용설명서]</a>'
         
+        # 아이콘 URL이 없거나 유효하지 않으면 아이콘 영역 제거
+        icon_url = app.icon_url or ""
+        if not icon_url or icon_url.strip() == "":
+            import re
+            # 아이콘 영역을 포함한 div 블록 제거 (id="app-icon-container" 또는 class에 "mb-8"이 있는 div)
+            detail_html = re.sub(
+                r'<div[^>]*(?:id="app-icon-container"|class="[^"]*mb-8[^"]*")[^>]*>.*?</div>\s*',
+                '',
+                detail_html,
+                flags=re.DOTALL | re.IGNORECASE
+            )
+            # 또는 일반적인 아이콘 영역 패턴 제거
+            detail_html = re.sub(
+                r'<!--\s*앱 아이콘\s*-->.*?<div[^>]*>.*?<img[^>]*src="\{\{ICON_URL\}\}"[^>]*>.*?</div>',
+                '',
+                detail_html,
+                flags=re.DOTALL | re.IGNORECASE
+            )
+        
         # 플레이스홀더 치환 (모든 플레이스홀더를 한 번에 처리)
         replacements = {
             "{{APP_NAME}}": app.name or "",
             "{{APP_DESCRIPTION}}": app.description or "",
             "{{APP_ID}}": app.app_id or "",
-            "{{ICON_URL}}": app.icon_url or "https://via.placeholder.com/128?text=App",
+            "{{ICON_URL}}": icon_url or "",
             "{{DOWNLOAD_URL}}": f"/api/update/download/{latest_version.id}" if latest_version else "",
             "{{DOWNLOAD_BUTTON}}": download_button,
             "{{MANUAL_DOWNLOAD_URL}}": manual_download_url or "",
@@ -264,6 +283,16 @@ async def get_public_app(
         
         for placeholder, value in replacements.items():
             detail_html = detail_html.replace(placeholder, value)
+        
+        # 아이콘 URL이 없는데 여전히 빈 img 태그가 남아있으면 제거
+        if not icon_url or icon_url.strip() == "":
+            import re
+            detail_html = re.sub(
+                r'<div[^>]*>.*?<img[^>]*src=""[^>]*>.*?</div>',
+                '',
+                detail_html,
+                flags=re.DOTALL | re.IGNORECASE
+            )
     
     return AppPublicResponse(
         app_id=app.app_id,

@@ -406,8 +406,8 @@ const HTML_TEMPLATES = [
     <div class="w-full md:w-96 lg:w-[480px] p-12 md:p-16 lg:p-20 flex flex-col justify-center items-end md:items-start">
       <div class="space-y-8 w-full">
         <!-- 앱 아이콘 -->
-        <div class="mb-8">
-          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.style.display='none'">
+        <div class="mb-8" id="app-icon-container">
+          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.parentElement.style.display='none'">
         </div>
         
         <!-- 제목 -->
@@ -486,8 +486,8 @@ const CSS_FRAMEWORKS = [
     <div class="w-full md:w-96 lg:w-[480px] p-12 md:p-16 lg:p-20 flex flex-col justify-center items-end md:items-start">
       <div class="space-y-8 w-full">
         <!-- 앱 아이콘 -->
-        <div class="mb-8">
-          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.style.display='none'">
+        <div class="mb-8" id="app-icon-container">
+          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.parentElement.style.display='none'">
         </div>
         
         <!-- 제목 -->
