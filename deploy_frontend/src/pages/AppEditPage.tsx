@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Save, ExternalLink, Code, Palette, RotateCcw, Plus } from 'lucide-react'
@@ -928,7 +928,7 @@ export default function AppEditPage() {
   }
 
   // 플레이스홀더를 실제 값으로 대체
-  const replacePlaceholders = (html: string) => {
+  const replacePlaceholders = useCallback((html: string) => {
     const downloadUrl = `/api/update/download/latest/${appId}`
     const manualDownloadUrl = formData.manual_file_path ? `/api/apps/public/${appId}/manual` : ''
     // 최신 버전 정보는 공개 페이지에서 자동으로 표시되므로 기본값 사용
@@ -950,7 +950,7 @@ export default function AppEditPage() {
       .replace(/\{\{MANUAL_DOWNLOAD_URL\}\}/g, manualDownloadUrl || '')
       .replace(/\{\{MANUAL_DOWNLOAD_BUTTON\}\}/g, manualButton)
       .replace(/\{\{LATEST_VERSION\}\}/g, latestVersion)
-  }
+  }, [appId, formData.name, formData.description, formData.icon_url, formData.manual_file_path])
 
   // HTML 템플릿 삽입 (기존 내용에 추가)
   const insertTemplate = (template: typeof HTML_TEMPLATES[0]) => {
@@ -977,6 +977,10 @@ export default function AppEditPage() {
     if (iframeRef.current) {
       const doc = iframeRef.current.contentDocument
       if (doc) {
+        // 플레이스홀더 치환된 HTML 사용
+        const htmlWithPlaceholders = formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center">HTML 탭에서 내용을 입력하세요</div>'
+        const htmlReplaced = replacePlaceholders(htmlWithPlaceholders)
+        
         doc.open()
         doc.write(`<!DOCTYPE html>
 <html lang="ko">
@@ -987,13 +991,13 @@ export default function AppEditPage() {
   <style>${formData.custom_css || ''}</style>
 </head>
 <body>
-${formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center">HTML 탭에서 내용을 입력하세요</div>'}
+${htmlReplaced}
 </body>
 </html>`)
         doc.close()
       }
     }
-  }, [formData.detail_html, formData.custom_css, cssFramework])
+  }, [formData.detail_html, formData.custom_css, cssFramework, replacePlaceholders])
 
   const updateMutation = useMutation({
     mutationFn: () => updateApp(appId!, formData),
@@ -1022,6 +1026,10 @@ ${formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center
   const handlePreviewNewTab = () => {
     const newWindow = window.open('', '_blank')
     if (newWindow) {
+      // 플레이스홀더 치환된 HTML 사용
+      const htmlWithPlaceholders = formData.detail_html || '<p>내용이 없습니다.</p>'
+      const htmlReplaced = replacePlaceholders(htmlWithPlaceholders)
+      
       newWindow.document.write(`<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1032,7 +1040,7 @@ ${formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center
   <style>${formData.custom_css || ''}</style>
 </head>
 <body>
-${formData.detail_html || '<p>내용이 없습니다.</p>'}
+${htmlReplaced}
 </body>
 </html>`)
       newWindow.document.close()
