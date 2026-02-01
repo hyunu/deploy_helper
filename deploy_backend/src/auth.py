@@ -67,11 +67,25 @@ async def get_current_user(
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
+    except Exception as e:
+        # 예상치 못한 예외를 401로 변환
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"인증 처리 중 오류가 발생했습니다: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    user = db.query(User).filter(User.email == token_data.email).first()
-    if user is None:
-        raise credentials_exception
-    return user
+    try:
+        user = db.query(User).filter(User.email == token_data.email).first()
+        if user is None:
+            raise credentials_exception
+        return user
+    except Exception as e:
+        # 데이터베이스 오류를 명확하게 처리
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="사용자 정보 조회 중 오류가 발생했습니다"
+        )
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

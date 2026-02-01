@@ -236,11 +236,35 @@ async def get_public_app(
     if app.manual_file_path:
         manual_download_url = f"/api/apps/public/{app.app_id}/manual"
     
+    # 플레이스홀더 치환
+    detail_html = app.detail_html or ""
+    if detail_html:
+        # 다운로드 버튼 HTML 생성
+        download_button = ""
+        if latest_version:
+            download_button = f'<a href="/api/update/download/{latest_version.id}" class="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">다운로드</a>'
+        
+        # 설명서 다운로드 버튼 HTML 생성
+        manual_download_button = ""
+        if manual_download_url:
+            manual_download_button = f'<a href="{manual_download_url}" class="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition">[사용설명서]</a>'
+        
+        # 플레이스홀더 치환
+        detail_html = detail_html.replace("{{APP_NAME}}", app.name or "")
+        detail_html = detail_html.replace("{{APP_DESCRIPTION}}", app.description or "")
+        detail_html = detail_html.replace("{{APP_ID}}", app.app_id or "")
+        detail_html = detail_html.replace("{{ICON_URL}}", app.icon_url or "https://via.placeholder.com/128?text=App")
+        detail_html = detail_html.replace("{{DOWNLOAD_URL}}", f"/api/update/download/{latest_version.id}" if latest_version else "")
+        detail_html = detail_html.replace("{{DOWNLOAD_BUTTON}}", download_button)
+        detail_html = detail_html.replace("{{MANUAL_DOWNLOAD_URL}}", manual_download_url or "")
+        detail_html = detail_html.replace("{{MANUAL_DOWNLOAD_BUTTON}}", manual_download_button)
+        detail_html = detail_html.replace("{{LATEST_VERSION}}", latest_version.version if latest_version else "")
+    
     return AppPublicResponse(
         app_id=app.app_id,
         name=app.name,
         description=app.description,
-        detail_html=app.detail_html,
+        detail_html=detail_html,
         custom_css=app.custom_css,
         icon_url=app.icon_url,
         latest_version=latest_version.version if latest_version else None,
