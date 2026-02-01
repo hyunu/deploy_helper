@@ -3,7 +3,7 @@ import shutil
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, and_
 
 from ..database import get_db
 from ..models import App, AppVersion, User, ReleaseChannel
@@ -190,8 +190,38 @@ async def update_app(
 
 
 # ============ 공개 API (인증 불필요) ============
+# 별도 라우터로 분리하여 인증 미적용
 
-@router.get("/public/{app_id}", response_model=AppPublicResponse)
+public_router = APIRouter(prefix="/api/apps", tags=["공개 앱"])
+
+@public_router.get("/public", response_model=AppListResponse)
+async def get_public_apps_list(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    공개 앱 목록 조회 (인증 불필요)
+    활성화된 버전이 있는 앱만 반환
+    """
+    # 활성화된 버전이 있는 공개 앱만 조회
+    query = db.query(App).join(
+        AppVersion,
+        and_(
+            AppVersion.app_id == App.id,
+            AppVersion.is_active == True,
+            AppVersion.channel == ReleaseChannel.STABLE
+        )
+    ).filter(
+        App.is_public == True
+    ).distinct()
+    
+    total = query.count()
+    apps = query.offset(skip).limit(limit).all()
+    return AppListResponse(apps=apps, total=total)
+
+
+@public_router.get("/public/{app_id}", response_model=AppPublicResponse)
 async def get_public_app(
     app_id: str,
     db: Session = Depends(get_db)
@@ -306,7 +336,7 @@ async def get_public_app(
     )
 
 
-@router.get("/public/{app_id}/manual")
+@public_router.get("/public/{app_id}/manual")
 async def download_manual(
     app_id: str,
     db: Session = Depends(get_db)
@@ -346,19 +376,6 @@ async def download_manual(
         filename=file_name,
         media_type="application/pdf" if file_name.lower().endswith('.pdf') else "application/octet-stream"
     )
-
-
-@router.get("/public", response_model=AppListResponse)
-async def get_public_apps_list(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
-    """공개 앱 목록 조회 (인증 불필요)"""
-    query = db.query(App).filter(App.is_public == True)
-    total = query.count()
-    apps = query.offset(skip).limit(limit).all()
-    return AppListResponse(apps=apps, total=total)
 
 
 @router.delete("/{app_id}", status_code=status.HTTP_204_NO_CONTENT)

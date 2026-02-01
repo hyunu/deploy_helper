@@ -104,6 +104,7 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(auth.router)
+app.include_router(apps.public_router)  # 공개 API (인증 불필요) - 먼저 등록
 app.include_router(apps.router)
 app.include_router(versions.router)
 app.include_router(update.router)
