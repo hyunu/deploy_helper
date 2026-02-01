@@ -115,17 +115,19 @@ export default function PublicAppPage() {
         const el = landingPageRef.current
         if (!el) return
 
-        // 아이콘 이미지 찾기
-        const iconImages = el.querySelectorAll('img[src*="{{ICON_URL}}"], img[alt*="{{APP_NAME}}"], img[src=""], img:not([src])')
+        // 아이콘 이미지 찾기 (모든 img 태그 확인)
+        const iconImages = el.querySelectorAll('img')
         
         iconImages.forEach((img) => {
           const imageElement = img as HTMLImageElement
+          const imgSrc = imageElement.src || imageElement.getAttribute('src') || ''
           
           // src가 비어있거나 유효하지 않으면 부모 div 숨기기
-          if (!imageElement.src || imageElement.src.trim() === '' || imageElement.src.includes('{{ICON_URL}}')) {
+          if (!imgSrc || imgSrc.trim() === '' || imgSrc.includes('{{ICON_URL}}') || imgSrc === window.location.origin + '/') {
             const parentDiv = imageElement.closest('div[id="app-icon-container"], div.mb-8')
             if (parentDiv) {
               (parentDiv as HTMLElement).style.display = 'none'
+              return
             }
           }
           
@@ -143,6 +145,15 @@ export default function PublicAppPage() {
             if (parentDiv) {
               (parentDiv as HTMLElement).style.display = 'none'
             }
+          }
+        })
+        
+        // 추가: id="app-icon-container"를 가진 빈 div도 숨기기
+        const iconContainers = el.querySelectorAll('div[id="app-icon-container"]')
+        iconContainers.forEach((container) => {
+          const img = container.querySelector('img')
+          if (!img || !img.src || img.src.trim() === '' || img.src === window.location.origin + '/') {
+            (container as HTMLElement).style.display = 'none'
           }
         })
       }

@@ -249,26 +249,8 @@ async def get_public_app(
         if manual_download_url:
             manual_download_button = f'<a href="{manual_download_url}" class="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition">[사용설명서]</a>'
         
-        # 아이콘 URL이 없거나 유효하지 않으면 아이콘 영역 제거
-        icon_url = app.icon_url or ""
-        if not icon_url or icon_url.strip() == "":
-            import re
-            # 아이콘 영역을 포함한 div 블록 제거 (id="app-icon-container" 또는 class에 "mb-8"이 있는 div)
-            detail_html = re.sub(
-                r'<div[^>]*(?:id="app-icon-container"|class="[^"]*mb-8[^"]*")[^>]*>.*?</div>\s*',
-                '',
-                detail_html,
-                flags=re.DOTALL | re.IGNORECASE
-            )
-            # 또는 일반적인 아이콘 영역 패턴 제거
-            detail_html = re.sub(
-                r'<!--\s*앱 아이콘\s*-->.*?<div[^>]*>.*?<img[^>]*src="\{\{ICON_URL\}\}"[^>]*>.*?</div>',
-                '',
-                detail_html,
-                flags=re.DOTALL | re.IGNORECASE
-            )
-        
         # 플레이스홀더 치환 (모든 플레이스홀더를 한 번에 처리)
+        icon_url = app.icon_url or ""
         replacements = {
             "{{APP_NAME}}": app.name or "",
             "{{APP_DESCRIPTION}}": app.description or "",
@@ -284,11 +266,26 @@ async def get_public_app(
         for placeholder, value in replacements.items():
             detail_html = detail_html.replace(placeholder, value)
         
-        # 아이콘 URL이 없는데 여전히 빈 img 태그가 남아있으면 제거
+        # 아이콘 URL이 없거나 유효하지 않으면 아이콘 영역 제거 (플레이스홀더 치환 후)
         if not icon_url or icon_url.strip() == "":
             import re
+            # 아이콘 영역을 포함한 div 블록 제거 (id="app-icon-container"가 있는 div)
             detail_html = re.sub(
-                r'<div[^>]*>.*?<img[^>]*src=""[^>]*>.*?</div>',
+                r'<div[^>]*id="app-icon-container"[^>]*>.*?</div>',
+                '',
+                detail_html,
+                flags=re.DOTALL | re.IGNORECASE
+            )
+            # 또는 mb-8 클래스를 가진 div 중 img 태그가 있고 src가 비어있는 경우
+            detail_html = re.sub(
+                r'<div[^>]*class="[^"]*mb-8[^"]*"[^>]*>\s*<!--\s*앱 아이콘\s*-->.*?<img[^>]*src=""[^>]*>.*?</div>',
+                '',
+                detail_html,
+                flags=re.DOTALL | re.IGNORECASE
+            )
+            # 일반적인 패턴: mb-8 클래스를 가진 div 안에 빈 src를 가진 img가 있는 경우
+            detail_html = re.sub(
+                r'<div[^>]*class="[^"]*mb-8[^"]*"[^>]*>.*?<img[^>]*src=""[^>]*>.*?</div>',
                 '',
                 detail_html,
                 flags=re.DOTALL | re.IGNORECASE
