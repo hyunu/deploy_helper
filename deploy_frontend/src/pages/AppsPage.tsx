@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getApps, createApp, deleteApp, CreateAppRequest } from '../api/apps'
-import { Plus, Trash2, ExternalLink, Package, Loader2 } from 'lucide-react'
+import { Plus, Trash2, ExternalLink, Package, Loader2, Settings } from 'lucide-react'
+import AppSettingsModal from '../components/AppSettingsModal'
 
 export default function AppsPage() {
   const queryClient = useQueryClient()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [settingsAppId, setSettingsAppId] = useState<string | null>(null)
   const [newApp, setNewApp] = useState<CreateAppRequest>({
     app_id: '',
     name: '',
@@ -99,13 +101,22 @@ export default function AppsPage() {
                     {app.app_id}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDelete(app.app_id)}
-                  className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                  title="삭제"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSettingsAppId(app.app_id)}
+                    className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                    title="설정"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(app.app_id)}
+                    className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                    title="삭제"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               
               {app.description && (
@@ -210,6 +221,15 @@ export default function AppsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 설정 모달 */}
+      {settingsAppId && (
+        <AppSettingsModal
+          appId={settingsAppId}
+          isOpen={!!settingsAppId}
+          onClose={() => setSettingsAppId(null)}
+        />
       )}
     </div>
   )

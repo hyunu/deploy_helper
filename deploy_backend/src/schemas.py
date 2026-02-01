@@ -59,6 +59,8 @@ class AppUpdate(AppBase):
     custom_css: Optional[str] = None
     icon_url: Optional[str] = None
     is_public: bool = True
+    manual_file_path: Optional[str] = None
+    manual_file_name: Optional[str] = None
 
 
 class AppResponse(AppBase):
@@ -67,6 +69,8 @@ class AppResponse(AppBase):
     custom_css: Optional[str] = None
     icon_url: Optional[str] = None
     is_public: bool = True
+    manual_file_path: Optional[str] = None
+    manual_file_name: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
@@ -85,6 +89,8 @@ class AppPublicResponse(BaseModel):
     latest_version: Optional[str] = None
     download_url: Optional[str] = None
     file_size: Optional[int] = None
+    manual_download_url: Optional[str] = None
+    manual_file_name: Optional[str] = None
     
     class Config:
         from_attributes = True

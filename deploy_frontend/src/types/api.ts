@@ -55,6 +55,8 @@ export interface AppResponse extends AppBase {
   custom_css?: string;
   icon_url?: string;
   is_public: boolean;
+  manual_file_path?: string;
+  manual_file_name?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -69,6 +71,8 @@ export interface AppPublicResponse {
   latest_version?: string;
   download_url?: string;
   file_size?: number;
+  manual_download_url?: string;
+  manual_file_name?: string;
 }
 
 export interface AppListResponse {

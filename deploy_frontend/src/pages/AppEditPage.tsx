@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Save, ExternalLink, Globe, Lock, Code, Palette, Settings, RotateCcw, Plus } from 'lucide-react'
+import { ArrowLeft, Save, ExternalLink, Code, Palette, RotateCcw, Plus } from 'lucide-react'
 import { getApp, updateApp } from '../api/apps'
 import Editor from '@monaco-editor/react'
 
 // HTML 템플릿 (플레이스홀더 사용)
-// {{APP_NAME}}, {{APP_DESCRIPTION}}, {{APP_ID}}, {{ICON_URL}}, {{DOWNLOAD_URL}}
+// {{APP_NAME}}, {{APP_DESCRIPTION}}, {{APP_ID}}, {{ICON_URL}}, {{DOWNLOAD_URL}}, {{DOWNLOAD_BUTTON}}, {{MANUAL_DOWNLOAD_URL}}, {{MANUAL_DOWNLOAD_BUTTON}}, {{LATEST_VERSION}}
+// 참고: 폰트는 PublicAppPage.tsx에서 자동으로 CSS로 주입됩니다.
+
 const HTML_TEMPLATES = [
   {
     id: 'hero-download',
@@ -14,7 +16,7 @@ const HTML_TEMPLATES = [
     icon: '🎯',
     description: '다운로드 버튼이 포함된 히어로 섹션',
     html: `<!-- 히어로 섹션 + 다운로드 버튼 -->
-<div class="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
+<div class="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style="font-family: 'LG Smart', sans-serif;">
   <div class="container mx-auto px-4 py-20">
     <div class="max-w-4xl mx-auto text-center text-white">
       <!-- 앱 아이콘 -->
@@ -27,93 +29,14 @@ const HTML_TEMPLATES = [
       <p class="text-xl opacity-90 mb-8">{{APP_DESCRIPTION}}</p>
       
       <!-- 다운로드 버튼 -->
-      <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-3 bg-white text-indigo-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition shadow-xl">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-        무료 다운로드
-      </a>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        {{DOWNLOAD_BUTTON}}
+        {{MANUAL_DOWNLOAD_BUTTON}}
+      </div>
       
       <!-- 버전 정보 (공개 페이지에서 자동 표시됨) -->
       <p class="mt-4 text-sm opacity-70">Windows 64-bit | 최신 버전</p>
     </div>
-  </div>
-</div>`,
-  },
-  {
-    id: 'product-page',
-    name: '프로덕트 페이지',
-    icon: '📦',
-    description: '히어로 + 기능 소개 + 다운로드',
-    html: `<!-- 프로덕트 페이지 -->
-<div class="min-h-screen">
-  <!-- 히어로 -->
-  <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white py-20">
-    <div class="container mx-auto px-4">
-      <div class="flex flex-col md:flex-row items-center gap-12">
-        <div class="flex-1">
-          <div class="inline-block px-4 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm mb-4">
-            NEW RELEASE
-          </div>
-          <h1 class="text-5xl font-bold mb-4">{{APP_NAME}}</h1>
-          <p class="text-xl text-gray-300 mb-8">{{APP_DESCRIPTION}}</p>
-          <div class="flex gap-4">
-            <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              다운로드
-            </a>
-            <a href="#features" class="inline-flex items-center gap-2 border border-gray-600 hover:border-gray-500 px-6 py-3 rounded-lg font-semibold transition">
-              자세히 보기
-            </a>
-          </div>
-        </div>
-        <div class="flex-1">
-          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-64 h-64 mx-auto rounded-3xl shadow-2xl" onerror="this.src='https://via.placeholder.com/256?text=App'">
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 기능 섹션 -->
-  <div id="features" class="py-20 bg-white">
-    <div class="container mx-auto px-4">
-      <h2 class="text-3xl font-bold text-center mb-4">주요 기능</h2>
-      <p class="text-gray-600 text-center mb-12">{{APP_NAME}}의 핵심 기능을 소개합니다</p>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="p-6 bg-gray-50 rounded-xl">
-          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-2xl">⚡</span>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">빠른 성능</h3>
-          <p class="text-gray-600">최적화된 코드로 빠르고 안정적으로 동작합니다.</p>
-        </div>
-        <div class="p-6 bg-gray-50 rounded-xl">
-          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-2xl">🔒</span>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">보안</h3>
-          <p class="text-gray-600">데이터를 안전하게 보호합니다.</p>
-        </div>
-        <div class="p-6 bg-gray-50 rounded-xl">
-          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-            <span class="text-2xl">🎨</span>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">쉬운 사용</h3>
-          <p class="text-gray-600">직관적인 UI로 누구나 쉽게 사용할 수 있습니다.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- CTA -->
-  <div class="py-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center">
-    <h2 class="text-3xl font-bold mb-4">지금 바로 시작하세요</h2>
-    <p class="mb-8 opacity-90">무료로 다운로드하고 경험해보세요</p>
-    <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:bg-opacity-90 transition">
-      무료 다운로드
-    </a>
   </div>
 </div>`,
   },
@@ -123,7 +46,7 @@ const HTML_TEMPLATES = [
     icon: '🃏',
     description: '깔끔한 카드 스타일',
     html: `<!-- 미니멀 카드 스타일 -->
-<div class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+<div class="min-h-screen bg-gray-100 flex items-center justify-center p-4" style="font-family: 'LG Smart', sans-serif;">
   <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
     <!-- 헤더 배경 -->
     <div class="h-32 bg-gradient-to-r from-violet-500 to-purple-500"></div>
@@ -138,9 +61,10 @@ const HTML_TEMPLATES = [
       <p class="text-gray-600 mb-6">{{APP_DESCRIPTION}}</p>
       
       <!-- 다운로드 버튼 -->
-      <a href="{{DOWNLOAD_URL}}" class="block w-full bg-violet-600 hover:bg-violet-700 text-white text-center py-3 rounded-xl font-semibold transition">
-        다운로드
-      </a>
+      <div class="space-y-3">
+        {{DOWNLOAD_BUTTON}}
+        {{MANUAL_DOWNLOAD_BUTTON}}
+      </div>
       
       <!-- 추가 정보 -->
       <div class="flex justify-center gap-6 mt-6 text-sm text-gray-500">
@@ -158,7 +82,7 @@ const HTML_TEMPLATES = [
     icon: '🌐',
     description: '완전한 랜딩 페이지 (네비게이션 포함)',
     html: `<!-- 풀 랜딩 페이지 -->
-<div class="min-h-screen">
+<div class="min-h-screen" style="font-family: 'LG Smart', sans-serif;">
   <!-- 네비게이션 -->
   <nav class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b">
     <div class="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -166,9 +90,7 @@ const HTML_TEMPLATES = [
         <img src="{{ICON_URL}}" alt="" class="w-8 h-8 rounded-lg" onerror="this.style.display='none'">
         <span class="font-bold text-xl">{{APP_NAME}}</span>
       </div>
-      <a href="{{DOWNLOAD_URL}}" class="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition">
-        다운로드
-      </a>
+      {{MANUAL_DOWNLOAD_BUTTON}}
     </div>
   </nav>
   
@@ -185,12 +107,8 @@ const HTML_TEMPLATES = [
         {{APP_DESCRIPTION}}
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-600/30">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-          무료 다운로드
-        </a>
+        {{DOWNLOAD_BUTTON}}
+        {{MANUAL_DOWNLOAD_BUTTON}}
         <a href="#features" class="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-200 transition">
           기능 살펴보기
         </a>
@@ -233,9 +151,10 @@ const HTML_TEMPLATES = [
     <div class="container mx-auto px-4 text-center">
       <h2 class="text-3xl font-bold mb-4">지금 시작하세요</h2>
       <p class="text-gray-400 mb-8">무료로 다운로드하고 사용해보세요</p>
-      <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-2 bg-white text-gray-900 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition">
-        다운로드
-      </a>
+      <div class="flex flex-wrap gap-4 justify-center">
+        {{DOWNLOAD_BUTTON}}
+        {{MANUAL_DOWNLOAD_BUTTON}}
+      </div>
     </div>
   </section>
   
@@ -249,15 +168,13 @@ const HTML_TEMPLATES = [
     id: 'download-only',
     name: '다운로드 버튼만',
     icon: '⬇️',
-    description: '간단한 다운로드 버튼 블록',
+    description: '설치파일 + 설명서 다운로드 버튼',
     html: `<!-- 다운로드 버튼 블록 -->
-<div class="flex flex-col items-center gap-4 p-8">
-  <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-    </svg>
-    {{APP_NAME}} 다운로드
-  </a>
+<div class="flex flex-col items-center gap-4 p-8" style="font-family: 'LG Smart', sans-serif;">
+  <div class="flex flex-col sm:flex-row gap-4 items-center">
+    {{DOWNLOAD_BUTTON}}
+    {{MANUAL_DOWNLOAD_BUTTON}}
+  </div>
   <span class="text-sm text-gray-500">Windows 64-bit</span>
 </div>`,
   },
@@ -265,10 +182,10 @@ const HTML_TEMPLATES = [
     id: 'version-info',
     name: '버전 정보 블록',
     icon: '📋',
-    description: '버전, 릴리즈 노트 표시',
+    description: '버전 정보 + 설치파일/설명서 다운로드',
     html: `<!-- 버전 정보 블록 -->
 <!-- 참고: 버전 정보는 공개 페이지(/p/앱ID)에서 자동으로 로드됩니다 -->
-<div class="bg-gray-50 rounded-xl p-6 max-w-lg mx-auto">
+<div class="bg-gray-50 rounded-xl p-6 max-w-lg mx-auto" style="font-family: 'LG Smart', sans-serif;">
   <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
     <span class="text-2xl">📦</span>
     버전 정보
@@ -289,9 +206,10 @@ const HTML_TEMPLATES = [
     </div>
   </div>
   
-  <a href="{{DOWNLOAD_URL}}" class="mt-6 block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-    최신 버전 다운로드
-  </a>
+  <div class="mt-6 space-y-3">
+    {{DOWNLOAD_BUTTON}}
+    {{MANUAL_DOWNLOAD_BUTTON}}
+  </div>
 </div>`,
   },
   {
@@ -300,7 +218,7 @@ const HTML_TEMPLATES = [
     icon: '📜',
     description: 'API에서 버전 목록을 자동으로 불러와 표시',
     html: `<!-- 버전 히스토리 (API에서 자동 로드) -->
-<div class="max-w-2xl mx-auto p-6">
+<div class="max-w-2xl mx-auto p-6" style="font-family: 'LG Smart', sans-serif;">
   <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
     <span>📜</span> 버전 히스토리
   </h2>
@@ -354,7 +272,7 @@ const HTML_TEMPLATES = [
     icon: '🏆',
     description: '히어로 + 기능 + 다운로드 + 버전 히스토리 통합',
     html: `<!-- 풀 프로덕트 페이지 + 버전 히스토리 -->
-<div class="min-h-screen">
+<div class="min-h-screen" style="font-family: 'LG Smart', sans-serif;">
   <!-- 히어로 섹션 -->
   <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-20">
     <div class="container mx-auto px-4 text-center">
@@ -362,12 +280,8 @@ const HTML_TEMPLATES = [
       <h1 class="text-5xl font-bold mb-4">{{APP_NAME}}</h1>
       <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">{{APP_DESCRIPTION}}</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-xl font-semibold transition shadow-lg">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-          무료 다운로드
-        </a>
+        {{DOWNLOAD_BUTTON}}
+        {{MANUAL_DOWNLOAD_BUTTON}}
         <a href="#versions" class="inline-flex items-center justify-center gap-2 border border-gray-600 hover:border-gray-500 px-8 py-4 rounded-xl font-semibold transition">
           버전 히스토리
         </a>
@@ -426,12 +340,9 @@ const HTML_TEMPLATES = [
   <div class="py-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center">
     <h2 class="text-3xl font-bold mb-4">지금 시작하세요</h2>
     <p class="mb-8 opacity-90">무료로 다운로드하고 사용해보세요</p>
-    <a href="{{DOWNLOAD_URL}}" class="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-opacity-90 transition shadow-lg">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-      </svg>
-      다운로드
-    </a>
+    <div class="flex flex-wrap gap-4 justify-center">
+      {{MANUAL_DOWNLOAD_BUTTON}}
+    </div>
   </div>
 
   <!-- 푸터 -->
@@ -471,7 +382,7 @@ const HTML_TEMPLATES = [
           \${v.release_notes ? '<div class="text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded-lg text-sm">' + v.release_notes + '</div>' : '<p class="text-gray-400 text-sm">릴리즈 노트가 없습니다.</p>'}
           <div class="flex items-center justify-between mt-3 text-xs text-gray-400">
             <span>\${v.file_size ? '파일 크기: ' + (v.file_size / 1024 / 1024).toFixed(2) + ' MB' : ''}</span>
-            \${i === 0 ? '<a href="{{DOWNLOAD_URL}}" class="text-blue-600 hover:underline font-medium">다운로드 →</a>' : ''}
+            \${i === 0 ? '<div class="flex flex-wrap gap-2"><a href="{{DOWNLOAD_URL}}" class="text-blue-600 hover:underline font-medium">다운로드 →</a>' + ('{{MANUAL_DOWNLOAD_URL}}' !== '' ? '<a href="{{MANUAL_DOWNLOAD_URL}}" class="text-gray-600 hover:underline font-medium">설명서 →</a>' : '') + '</div>' : ''}
           </div>
         </div>
       \`).join('');
@@ -481,6 +392,73 @@ const HTML_TEMPLATES = [
     });
 })();
 </script>`,
+  },
+  {
+    id: 'product-manual-fullscreen',
+    name: '제품설명서 전체화면',
+    icon: '📄',
+    description: '중앙 배치, 중간 구분선 (왼쪽 제목/버전, 오른쪽 설명/버튼)',
+    html: `<!-- 제품설명서 전체화면 템플릿 - 중앙 배치 -->
+<div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-8 md:p-12 lg:p-16" style="font-family: 'LG Smart', sans-serif;">
+  <!-- 중앙 컨테이너 -->
+  <div class="w-full max-w-5xl flex overflow-hidden">
+    <!-- 왼쪽 섹션: 제목 및 버전 -->
+    <div class="w-full md:w-96 lg:w-[480px] p-12 md:p-16 lg:p-20 flex flex-col justify-center items-end md:items-start">
+      <div class="space-y-8 w-full">
+        <!-- 앱 아이콘 -->
+        <div class="mb-8">
+          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.style.display='none'">
+        </div>
+        
+        <!-- 제목 -->
+        <div>
+          <div class="inline-block px-4 py-2 bg-gray-200 rounded-full text-sm font-medium text-gray-700 mb-6">
+            제품 설명서
+          </div>
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight">
+            {{APP_NAME}}
+          </h1>
+        </div>
+        
+        <!-- 버전 정보 -->
+        <div class="pt-3 border-t border-gray-300">
+          <div class="flex items-baseline gap-3">
+            <span class="text-gray-600 text-base font-medium leading-none">Version</span>
+            <span class="px-3 py-0.5 bg-indigo-100 rounded-lg text-lg font-bold text-indigo-700 leading-tight">
+              v{{LATEST_VERSION}}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 중간 구분선 -->
+    <div class="hidden md:block w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+    
+    <!-- 오른쪽 섹션: 설명 및 버튼 -->
+    <div class="flex-1 p-12 md:p-16 lg:p-20">
+      <div class="max-w-xl">
+        <!-- 설명 영역 -->
+        <div class="mb-6">
+          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal">
+            {{APP_DESCRIPTION}}
+          </div>
+        </div>
+        
+        <!-- 버튼 영역 -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-start items-start">
+          {{DOWNLOAD_BUTTON}}
+          {{MANUAL_DOWNLOAD_BUTTON}}
+        </div>
+        
+        <!-- 추가 정보 -->
+        <div class="mt-6">
+          <p class="text-sm text-gray-600 font-medium">Windows 64-bit 지원 | 최신 버전</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,
   },
 ]
 
@@ -500,37 +478,62 @@ const CSS_FRAMEWORKS = [
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 `,
-    defaultHtml: `<div class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-  <!-- 히어로 섹션 -->
-  <div class="container mx-auto px-4 py-20">
-    <div class="text-center text-white">
-      <h1 class="text-5xl font-bold mb-6">앱 이름</h1>
-      <p class="text-xl mb-8 opacity-90">앱에 대한 간단한 설명을 여기에 작성하세요</p>
-      <button class="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-opacity-90 transition shadow-lg">
-        다운로드
-      </button>
+    defaultHtml: `<!-- 제품설명서 전체화면 템플릿 - 중앙 배치 -->
+<div class="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-8 md:p-12 lg:p-16" style="font-family: 'LG Smart', sans-serif;">
+  <!-- 중앙 컨테이너 -->
+  <div class="w-full max-w-5xl flex overflow-hidden">
+    <!-- 왼쪽 섹션: 제목 및 버전 -->
+    <div class="w-full md:w-96 lg:w-[480px] p-12 md:p-16 lg:p-20 flex flex-col justify-center items-end md:items-start">
+      <div class="space-y-8 w-full">
+        <!-- 앱 아이콘 -->
+        <div class="mb-8">
+          <img src="{{ICON_URL}}" alt="{{APP_NAME}}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg ring-4 ring-gray-200" onerror="this.style.display='none'">
+        </div>
+        
+        <!-- 제목 -->
+        <div>
+          <div class="inline-block px-4 py-2 bg-gray-200 rounded-full text-sm font-medium text-gray-700 mb-6">
+            제품 설명서
+          </div>
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 tracking-tight leading-tight">
+            {{APP_NAME}}
+          </h1>
+        </div>
+        
+        <!-- 버전 정보 -->
+        <div class="pt-3 border-t border-gray-300">
+          <div class="flex items-baseline gap-3">
+            <span class="text-gray-600 text-base font-medium leading-none">Version</span>
+            <span class="px-3 py-0.5 bg-indigo-100 rounded-lg text-lg font-bold text-indigo-700 leading-tight">
+              v{{LATEST_VERSION}}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <!-- 기능 섹션 -->
-  <div class="bg-white py-20">
-    <div class="container mx-auto px-4">
-      <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">주요 기능</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-gray-50 p-6 rounded-xl">
-          <div class="text-4xl mb-4">🚀</div>
-          <h3 class="text-xl font-semibold mb-2">빠른 속도</h3>
-          <p class="text-gray-600">최적화된 성능으로 빠르게 실행됩니다.</p>
+    
+    <!-- 중간 구분선 -->
+    <div class="hidden md:block w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+    
+    <!-- 오른쪽 섹션: 설명 및 버튼 -->
+    <div class="flex-1 p-12 md:p-16 lg:p-20">
+      <div class="max-w-xl">
+        <!-- 설명 영역 -->
+        <div class="mb-6">
+          <div class="text-gray-800 text-base md:text-lg lg:text-xl leading-relaxed whitespace-pre-line font-normal">
+            {{APP_DESCRIPTION}}
+          </div>
         </div>
-        <div class="bg-gray-50 p-6 rounded-xl">
-          <div class="text-4xl mb-4">🔒</div>
-          <h3 class="text-xl font-semibold mb-2">보안</h3>
-          <p class="text-gray-600">안전한 데이터 보호를 제공합니다.</p>
+        
+        <!-- 버튼 영역 -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-start items-start">
+          {{DOWNLOAD_BUTTON}}
+          {{MANUAL_DOWNLOAD_BUTTON}}
         </div>
-        <div class="bg-gray-50 p-6 rounded-xl">
-          <div class="text-4xl mb-4">💡</div>
-          <h3 class="text-xl font-semibold mb-2">간편한 사용</h3>
-          <p class="text-gray-600">직관적인 인터페이스로 쉽게 사용할 수 있습니다.</p>
+        
+        <!-- 추가 정보 -->
+        <div class="mt-6">
+          <p class="text-sm text-gray-600 font-medium">Windows 64-bit 지원 | 최신 버전</p>
         </div>
       </div>
     </div>
@@ -560,7 +563,7 @@ const CSS_FRAMEWORKS = [
   transform: translateY(-5px);
 }
 `,
-    defaultHtml: `<div class="hero-section text-center">
+    defaultHtml: `<div class="hero-section text-center" style="font-family: 'LG Smart', sans-serif;">
   <div class="container">
     <h1 class="display-4 fw-bold mb-4">앱 이름</h1>
     <p class="lead mb-4">앱에 대한 간단한 설명을 여기에 작성하세요</p>
@@ -622,7 +625,7 @@ const CSS_FRAMEWORKS = [
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 `,
-    defaultHtml: `<section class="hero is-custom is-medium">
+    defaultHtml: `<section class="hero is-custom is-medium" style="font-family: 'LG Smart', sans-serif;">
   <div class="hero-body has-text-centered">
     <p class="title is-1 has-text-white">앱 이름</p>
     <p class="subtitle has-text-white">앱에 대한 간단한 설명을 여기에 작성하세요</p>
@@ -680,7 +683,7 @@ const CSS_FRAMEWORKS = [
   background: linear-gradient(to bottom, #f8f9fa, #ffffff);
 }
 `,
-    defaultHtml: `<main class="container">
+    defaultHtml: `<main class="container" style="font-family: 'LG Smart', sans-serif;">
   <header class="hero">
     <h1>앱 이름</h1>
     <p>앱에 대한 간단한 설명을 여기에 작성하세요</p>
@@ -724,7 +727,7 @@ section {
   margin: 2rem 0;
 }
 `,
-    defaultHtml: `<header>
+    defaultHtml: `<header style="font-family: 'LG Smart', sans-serif;">
   <h1>앱 이름</h1>
   <p>앱에 대한 간단한 설명을 여기에 작성하세요</p>
   <button>다운로드</button>
@@ -818,7 +821,7 @@ body {
   margin: 1rem 0 0.5rem;
 }
 `,
-    defaultHtml: `<div class="hero">
+    defaultHtml: `<div class="hero" style="font-family: 'LG Smart', sans-serif;">
   <h1>앱 이름</h1>
   <p>앱에 대한 간단한 설명을 여기에 작성하세요</p>
   <a href="#" class="btn">다운로드</a>
@@ -852,7 +855,7 @@ export default function AppEditPage() {
   const queryClient = useQueryClient()
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  const [activeTab, setActiveTab] = useState<'html' | 'css' | 'settings'>('html')
+  const [activeTab, setActiveTab] = useState<'html' | 'css'>('html')
   const [cssFramework, setCssFramework] = useState('tailwind')
   const [showTemplateMenu, setShowTemplateMenu] = useState(false)
   const [formData, setFormData] = useState({
@@ -863,6 +866,8 @@ export default function AppEditPage() {
     custom_css: '',
     icon_url: '',
     is_public: true,
+    manual_file_path: '',
+    manual_file_name: '',
   })
   const [isSaving, setIsSaving] = useState(false)
 
@@ -879,9 +884,11 @@ export default function AppEditPage() {
         name: app.name,
         description: app.description || '',
         detail_html: app.detail_html || '',
-        custom_css: app.custom_css || CSS_FRAMEWORKS[0].defaultCss,
+        custom_css: app.custom_css || (CSS_FRAMEWORKS[0]?.defaultCss || ''),
         icon_url: app.icon_url || '',
         is_public: app.is_public ?? true,
+        manual_file_path: app.manual_file_path || '',
+        manual_file_name: app.manual_file_name || '',
       })
     }
   }, [app])
@@ -902,8 +909,8 @@ export default function AppEditPage() {
         setCssFramework(frameworkId)
         setFormData({ 
           ...formData, 
-          custom_css: framework.defaultCss,
-          detail_html: framework.defaultHtml 
+          custom_css: framework.defaultCss || '',
+          detail_html: framework.defaultHtml || ''
         })
       }
     }
@@ -914,8 +921,8 @@ export default function AppEditPage() {
     if (selectedFramework && confirm('현재 프레임워크의 기본 템플릿(HTML + CSS)으로 초기화하시겠습니까?')) {
       setFormData({ 
         ...formData, 
-        custom_css: selectedFramework.defaultCss,
-        detail_html: selectedFramework.defaultHtml 
+        custom_css: selectedFramework.defaultCss || '',
+        detail_html: selectedFramework.defaultHtml || ''
       })
     }
   }
@@ -923,12 +930,26 @@ export default function AppEditPage() {
   // 플레이스홀더를 실제 값으로 대체
   const replacePlaceholders = (html: string) => {
     const downloadUrl = `/api/update/download/latest/${appId}`
+    const manualDownloadUrl = formData.manual_file_path ? `/api/apps/public/${appId}/manual` : ''
+    // 최신 버전 정보는 공개 페이지에서 자동으로 표시되므로 기본값 사용
+    const latestVersion = '1.0.0'
+    
+    // 설치파일 다운로드 버튼 (항상 표시)
+    const downloadButton = `<a href="${downloadUrl}" class="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">다운로드</a>`
+    
+    // 설명서 다운로드 버튼 (설명서가 있을 때만 표시)
+    const manualButton = manualDownloadUrl ? `<a href="${manualDownloadUrl}" class="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition">설명서</a>` : ''
+    
     return html
       .replace(/\{\{APP_NAME\}\}/g, formData.name || '앱 이름')
       .replace(/\{\{APP_DESCRIPTION\}\}/g, formData.description || '앱 설명')
       .replace(/\{\{APP_ID\}\}/g, appId || '')
       .replace(/\{\{ICON_URL\}\}/g, formData.icon_url || 'https://via.placeholder.com/128?text=App')
       .replace(/\{\{DOWNLOAD_URL\}\}/g, downloadUrl)
+      .replace(/\{\{DOWNLOAD_BUTTON\}\}/g, downloadButton)
+      .replace(/\{\{MANUAL_DOWNLOAD_URL\}\}/g, manualDownloadUrl || '')
+      .replace(/\{\{MANUAL_DOWNLOAD_BUTTON\}\}/g, manualButton)
+      .replace(/\{\{LATEST_VERSION\}\}/g, latestVersion)
   }
 
   // HTML 템플릿 삽입 (기존 내용에 추가)
@@ -976,10 +997,13 @@ ${formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center
 
   const updateMutation = useMutation({
     mutationFn: () => updateApp(appId!, formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['app', appId] })
-      queryClient.invalidateQueries({ queryKey: ['apps'] })
+    onSuccess: async () => {
+      // 저장 성공 후 앱 정보 다시 로드하여 최신 상태 반영
+      await queryClient.invalidateQueries({ queryKey: ['app', appId] })
+      await queryClient.invalidateQueries({ queryKey: ['apps'] })
       setIsSaving(false)
+      
+      // 등록된 파일명이 있으면 함께 표시
       alert('저장되었습니다.')
     },
     onError: (error: any) => {
@@ -988,10 +1012,12 @@ ${formData.detail_html || '<div style="padding:2rem;color:#999;text-align:center
     },
   })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
+    // 페이지 편집만 저장 (설정은 별도 모달에서 처리)
     updateMutation.mutate()
   }
+
 
   const handlePreviewNewTab = () => {
     const newWindow = window.open('', '_blank')
@@ -1065,8 +1091,7 @@ ${formData.detail_html || '<p>내용이 없습니다.</p>'}
       </div>
 
       {/* 메인 콘텐츠 - 좌우 분할 */}
-      {activeTab !== 'settings' ? (
-        <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
           {/* 좌측: 에디터 */}
           <div className="w-1/2 flex flex-col border-r border-gray-200">
             {/* 탭 */}
@@ -1093,13 +1118,6 @@ ${formData.detail_html || '<p>내용이 없습니다.</p>'}
                 <Palette className="w-4 h-4" />
                 CSS
               </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px border-transparent text-gray-500 hover:text-gray-700"
-              >
-                <Settings className="w-4 h-4" />
-                설정
-              </button>
             </div>
 
             {/* HTML 탭일 때 템플릿 선택 UI */}
@@ -1117,41 +1135,43 @@ ${formData.detail_html || '<p>내용이 없습니다.</p>'}
                     </button>
                     
                     {showTemplateMenu && (
-                      <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-auto">
-                        <div className="p-3 border-b bg-gray-50">
+                      <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-[600px] overflow-y-auto flex flex-col">
+                        <div className="p-3 border-b bg-gray-50 sticky top-0 z-10 flex-shrink-0">
                           <p className="text-xs font-medium text-gray-700">템플릿 선택</p>
                           <p className="text-xs text-gray-500 mt-1">
                             플레이스홀더(앱이름, 다운로드URL 등)가 자동으로 채워집니다
                           </p>
                         </div>
-                        {HTML_TEMPLATES.map((template) => (
-                          <div key={template.id} className="p-3 hover:bg-gray-50 border-b last:border-b-0">
-                            <div className="flex items-start gap-3">
-                              <span className="text-2xl">{template.icon}</span>
-                              <div className="flex-1">
-                                <p className="font-medium text-sm text-gray-800">{template.name}</p>
-                                <p className="text-xs text-gray-500 mb-2">{template.description}</p>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => insertTemplate(template)}
-                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                  >
-                                    추가
-                                  </button>
-                                  <button
-                                    onClick={() => replaceWithTemplate(template)}
-                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                                  >
-                                    전체 교체
-                                  </button>
+                        <div className="flex-1 overflow-y-auto">
+                          {HTML_TEMPLATES.map((template) => (
+                            <div key={template.id} className="p-3 hover:bg-gray-50 border-b last:border-b-0">
+                              <div className="flex items-start gap-3">
+                                <span className="text-2xl">{template.icon}</span>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-gray-800">{template.name}</p>
+                                  <p className="text-xs text-gray-500 mb-2">{template.description}</p>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => insertTemplate(template)}
+                                      className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                    >
+                                      추가
+                                    </button>
+                                    <button
+                                      onClick={() => replaceWithTemplate(template)}
+                                      className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                    >
+                                      전체 교체
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                        <div className="p-3 bg-yellow-50 border-t">
+                          ))}
+                        </div>
+                        <div className="p-3 bg-yellow-50 border-t sticky bottom-0 z-10 flex-shrink-0">
                           <p className="text-xs text-yellow-800">
-                            <strong>플레이스홀더:</strong> {'{{APP_NAME}}'}, {'{{DOWNLOAD_URL}}'}, {'{{ICON_URL}}'} 등이 실제 값으로 변환됩니다
+                            <strong>플레이스홀더:</strong> {'{{APP_NAME}}'}, {'{{APP_DESCRIPTION}}'}, {'{{ICON_URL}}'}, {'{{DOWNLOAD_URL}}'}, {'{{DOWNLOAD_BUTTON}}'}, {'{{MANUAL_DOWNLOAD_URL}}'}, {'{{MANUAL_DOWNLOAD_BUTTON}}'}, {'{{LATEST_VERSION}}'} 등이 실제 값으로 변환됩니다
                           </p>
                         </div>
                       </div>
@@ -1275,120 +1295,6 @@ ${formData.detail_html || '<p>내용이 없습니다.</p>'}
             </div>
           </div>
         </div>
-      ) : (
-        /* 설정 탭 */
-        <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-2xl mx-auto space-y-6">
-            {/* 탭으로 돌아가기 */}
-            <div className="flex border-b border-gray-200 bg-gray-50 -mx-6 -mt-6 mb-6 px-4">
-              <button
-                onClick={() => setActiveTab('html')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px border-transparent text-gray-500 hover:text-gray-700"
-              >
-                <Code className="w-4 h-4" />
-                HTML
-              </button>
-              <button
-                onClick={() => setActiveTab('css')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px border-transparent text-gray-500 hover:text-gray-700"
-              >
-                <Palette className="w-4 h-4" />
-                CSS
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px border-blue-600 text-blue-600 bg-white"
-              >
-                <Settings className="w-4 h-4" />
-                설정
-              </button>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">앱 이름</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">간단한 설명</label>
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="앱에 대한 한 줄 설명"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">앱 아이콘 URL</label>
-                  <input
-                    type="url"
-                    value={formData.icon_url}
-                    onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
-                    placeholder="https://example.com/icon.png"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  {formData.icon_url && (
-                    <img
-                      src={formData.icon_url}
-                      alt="Icon"
-                      className="mt-2 w-16 h-16 rounded-xl object-cover border"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">공개 설정</h2>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  {formData.is_public ? (
-                    <Globe className="w-6 h-6 text-green-600" />
-                  ) : (
-                    <Lock className="w-6 h-6 text-gray-400" />
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {formData.is_public ? '공개 페이지 활성화' : '공개 페이지 비활성화'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formData.is_public ? '누구나 앱 상세 페이지를 볼 수 있습니다.' : '비공개 상태입니다.'}
-                    </p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_public}
-                    onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              {formData.is_public && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-medium">공개 URL:</span>{' '}
-                    <a href={`/p/${appId}`} target="_blank" rel="noopener noreferrer" className="underline">
-                      {window.location.origin}/p/{appId}
-                    </a>
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

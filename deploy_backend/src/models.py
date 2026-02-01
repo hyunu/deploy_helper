@@ -41,6 +41,10 @@ class App(Base):
     icon_url = Column(String(500))  # 앱 아이콘 URL
     is_public = Column(Boolean, default=True)  # 공개 페이지 활성화 여부
     
+    # 설명서 파일
+    manual_file_path = Column(String(500))  # 설명서 파일 경로 (PDF 등)
+    manual_file_name = Column(String(255))  # 설명서 파일명
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
-import { Download, AlertCircle } from 'lucide-react'
+import { Download, AlertCircle, FileText } from 'lucide-react'
 import { getPublicApp } from '../api/apps'
 
 function formatBytes(bytes: number): string {
@@ -17,6 +17,7 @@ function formatBytes(bytes: number): string {
 export default function PublicAppPage() {
   const { appId } = useParams<{ appId: string }>()
   const [tailwindLoaded, setTailwindLoaded] = useState(false)
+  const [fontLoaded, setFontLoaded] = useState(false)
   const landingPageRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -30,7 +31,7 @@ export default function PublicAppPage() {
     retry: false,
   })
 
-  // Tailwind CDN 동적 로드 (detail_html에 tailwind 클래스가 있는 경우)
+  // Tailwind CDN 및 폰트 동적 로드
   useEffect(() => {
     if (app?.detail_html && !tailwindLoaded) {
       // Tailwind 클래스가 있는지 확인
@@ -49,7 +50,18 @@ export default function PublicAppPage() {
         document.head.appendChild(script)
       }
     }
-  }, [app?.detail_html, tailwindLoaded])
+
+    // 폰트는 index.html에서 이미 로드되므로 별도 처리 불필요
+    if (app?.detail_html && !fontLoaded) {
+      // Noto Sans KR 폰트가 로드되었는지 확인
+      const fontLink = document.querySelector('link[href*="Noto+Sans+KR"]')
+      if (fontLink) {
+        setFontLoaded(true)
+      } else {
+        setTimeout(() => setFontLoaded(true), 500)
+      }
+    }
+  }, [app?.detail_html, tailwindLoaded, fontLoaded])
 
   // 상단 고정 요소만 제거 (사용자가 작성한 HTML/CSS는 그대로 유지)
   useEffect(() => {
@@ -79,6 +91,52 @@ export default function PublicAppPage() {
     }
   }
 
+  const handleManualDownload = () => {
+    if (app?.manual_download_url) {
+      window.location.href = app.manual_download_url
+    }
+  }
+
+  // detail_html 내부의 다운로드 링크를 실제 URL로 변환
+  useEffect(() => {
+    if (landingPageRef.current && app) {
+      const processLinks = () => {
+        const el = landingPageRef.current
+        if (!el) return
+
+        // 설치파일 다운로드 링크 처리
+        if (app.download_url) {
+          const downloadLinks = el.querySelectorAll('a[href*="/api/update/download/latest/"]')
+          downloadLinks.forEach((link) => {
+            const anchor = link as HTMLAnchorElement
+            anchor.href = app.download_url!
+            anchor.onclick = (e) => {
+              e.preventDefault()
+              handleDownload()
+            }
+          })
+        }
+
+        // 설명서 다운로드 링크 처리
+        if (app.manual_download_url) {
+          const manualLinks = el.querySelectorAll('a[href*="/api/apps/public/"][href*="/manual"]')
+          manualLinks.forEach((link) => {
+            const anchor = link as HTMLAnchorElement
+            anchor.href = app.manual_download_url!
+            anchor.onclick = (e) => {
+              e.preventDefault()
+              handleManualDownload()
+            }
+          })
+        }
+      }
+
+      processLinks()
+      setTimeout(processLinks, 100)
+      setTimeout(processLinks, 500)
+    }
+  }, [app?.detail_html, app?.download_url, app?.manual_download_url])
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -103,11 +161,47 @@ export default function PublicAppPage() {
     )
   }
 
+  // 폰트 CSS 정의 (모든 템플릿에 자동 적용)
+  const fontCss = `
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/LGSmHaL.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/LGSmHaR.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/LGSmHaSB.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/LGSmHaB.ttf') format('truetype');
+}
+* { font-family: 'LG Smart', sans-serif; }
+`
+
   // 사용자가 작성한 HTML과 CSS를 그대로 표시
   // detail_html이 있으면 그것을 그대로 렌더링하고, custom_css를 적용
   if (app.detail_html) {
     return (
       <>
+        {/* 폰트 CSS 자동 적용 */}
+        <style>{fontCss}</style>
+        
         {/* 사용자가 작성한 CSS 적용 */}
         {app.custom_css && <style>{app.custom_css}</style>}
         
@@ -126,6 +220,33 @@ export default function PublicAppPage() {
           ref={landingPageRef}
           dangerouslySetInnerHTML={{ __html: app.detail_html }}
         />
+        
+        {/* 다운로드 버튼 영역 (설치파일 또는 설명서가 있는 경우) */}
+        {(app.download_url || app.manual_download_url) && (
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+            {app.download_url && (
+              <button
+                onClick={handleDownload}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+                title="설치파일 다운로드"
+              >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline">설치파일</span>
+              </button>
+            )}
+            {app.manual_download_url && (
+              <button
+                onClick={handleManualDownload}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors shadow-lg"
+                title="설명서 다운로드"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="hidden sm:inline">설명서</span>
+              </button>
+            )}
+          </div>
+        )}
+        
         <footer className="py-6 text-center text-sm text-gray-400 bg-gray-100">
           Powered by Deploy Helper
         </footer>
@@ -136,6 +257,9 @@ export default function PublicAppPage() {
   // detail_html이 없는 경우 기본 레이아웃
   return (
     <>
+      {/* 폰트 CSS 자동 적용 */}
+      <style>{fontCss}</style>
+      
       {/* 커스텀 CSS 적용 */}
       {app.custom_css && <style>{app.custom_css}</style>}
 
@@ -155,16 +279,38 @@ export default function PublicAppPage() {
                     <span className="ml-2">({formatBytes(app.file_size)})</span>
                   )}
                 </p>
-                <button
-                  onClick={handleDownload}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  다운로드
-                </button>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button
+                    onClick={handleDownload}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    설치파일 다운로드
+                  </button>
+                  {app.manual_download_url && (
+                    <button
+                      onClick={handleManualDownload}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      <FileText className="w-5 h-5" />
+                      설명서 다운로드
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">아직 배포된 버전이 없습니다.</p>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">아직 배포된 버전이 없습니다.</p>
+                {app.manual_download_url && (
+                  <button
+                    onClick={handleManualDownload}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    <FileText className="w-5 h-5" />
+                    설명서 다운로드
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

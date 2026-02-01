@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 폰트 정의 - LG Smart */
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/LGSmHaL.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/LGSmHaR.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/LGSmHaSB.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'LG Smart';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/LGSmHaB.ttf') format('truetype');
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -72,6 +105,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'LG Smart', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 }

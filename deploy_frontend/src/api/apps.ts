@@ -9,6 +9,8 @@ export interface App {
   custom_css: string | null
   icon_url: string | null
   is_public: boolean
+  manual_file_path: string | null
+  manual_file_name: string | null
   created_at: string
   updated_at: string | null
 }
@@ -44,6 +46,8 @@ export interface PublicApp {
   latest_version: string | null
   download_url: string | null
   file_size: number | null
+  manual_download_url: string | null
+  manual_file_name: string | null
 }
 
 export interface Version {
