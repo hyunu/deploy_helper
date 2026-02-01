@@ -249,16 +249,21 @@ async def get_public_app(
         if manual_download_url:
             manual_download_button = f'<a href="{manual_download_url}" class="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition">[사용설명서]</a>'
         
-        # 플레이스홀더 치환
-        detail_html = detail_html.replace("{{APP_NAME}}", app.name or "")
-        detail_html = detail_html.replace("{{APP_DESCRIPTION}}", app.description or "")
-        detail_html = detail_html.replace("{{APP_ID}}", app.app_id or "")
-        detail_html = detail_html.replace("{{ICON_URL}}", app.icon_url or "https://via.placeholder.com/128?text=App")
-        detail_html = detail_html.replace("{{DOWNLOAD_URL}}", f"/api/update/download/{latest_version.id}" if latest_version else "")
-        detail_html = detail_html.replace("{{DOWNLOAD_BUTTON}}", download_button)
-        detail_html = detail_html.replace("{{MANUAL_DOWNLOAD_URL}}", manual_download_url or "")
-        detail_html = detail_html.replace("{{MANUAL_DOWNLOAD_BUTTON}}", manual_download_button)
-        detail_html = detail_html.replace("{{LATEST_VERSION}}", latest_version.version if latest_version else "")
+        # 플레이스홀더 치환 (모든 플레이스홀더를 한 번에 처리)
+        replacements = {
+            "{{APP_NAME}}": app.name or "",
+            "{{APP_DESCRIPTION}}": app.description or "",
+            "{{APP_ID}}": app.app_id or "",
+            "{{ICON_URL}}": app.icon_url or "https://via.placeholder.com/128?text=App",
+            "{{DOWNLOAD_URL}}": f"/api/update/download/{latest_version.id}" if latest_version else "",
+            "{{DOWNLOAD_BUTTON}}": download_button,
+            "{{MANUAL_DOWNLOAD_URL}}": manual_download_url or "",
+            "{{MANUAL_DOWNLOAD_BUTTON}}": manual_download_button,
+            "{{LATEST_VERSION}}": latest_version.version if latest_version else ""
+        }
+        
+        for placeholder, value in replacements.items():
+            detail_html = detail_html.replace(placeholder, value)
     
     return AppPublicResponse(
         app_id=app.app_id,
