@@ -342,7 +342,7 @@ async def update_app(
         )
     
     # app_id 변경 시 중복 체크
-    if app_data.app_id != app_id:
+    if app_data.app_id and app_data.app_id != app_id:
         existing = db.query(App).filter(App.app_id == app_data.app_id).first()
         if existing:
             raise HTTPException(
@@ -350,7 +350,9 @@ async def update_app(
                 detail="이미 등록된 앱 ID입니다"
             )
     
-    for key, value in app_data.model_dump().items():
+    # exclude_unset=True를 사용하여 전송된 필드만 업데이트 (다른 필드가 None으로 덮어씌워지는 것을 방지)
+    update_data = app_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
         setattr(app, key, value)
     
     db.commit()
@@ -626,5 +628,15 @@ async def delete_app(
             detail="앱을 찾을 수 없습니다"
         )
     
+    # 관련 파일 삭제
+    app_upload_dir = os.path.join(settings.upload_dir, app_id)
+    if os.path.exists(app_upload_dir):
+        try:
+            shutil.rmtree(app_upload_dir)
+        except Exception as e:
+            # 파일 삭제 실패해도 DB 삭제는 진행
+            pass
+    
+    # 데이터베이스에서 앱 삭제 (cascade로 버전도 자동 삭제됨)
     db.delete(app)
     db.commit()
