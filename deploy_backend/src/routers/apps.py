@@ -1,7 +1,7 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_
 
@@ -138,6 +138,175 @@ async def delete_manual(
     db.refresh(app)
     
     return {"message": "설명서 파일이 삭제되었습니다"}
+
+
+@router.post("/{app_id}/icon")
+async def upload_icon(
+    app_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """앱 아이콘 이미지 업로드"""
+    app = db.query(App).filter(App.app_id == app_id).first()
+    if not app:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="앱을 찾을 수 없습니다"
+        )
+    
+    # 이미지 파일 확장자 확인
+    allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"지원하지 않는 파일 형식입니다. 허용된 형식: {', '.join(allowed_extensions)}"
+        )
+    
+    # 파일 크기 확인 (최대 5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    file_content = await file.read()
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="파일 크기가 너무 큽니다. 최대 5MB까지 업로드 가능합니다."
+        )
+    
+    # 아이콘 파일 저장 디렉토리
+    icon_dir = os.path.join(settings.upload_dir, app_id, "icon")
+    os.makedirs(icon_dir, exist_ok=True)
+    
+    # 기존 아이콘 파일이 있으면 삭제
+    if app.icon_url and app.icon_url.startswith('/api/apps/'):
+        # 기존 업로드된 파일 경로 추출
+        old_icon_path = os.path.join(icon_dir, os.path.basename(app.icon_url))
+        if os.path.exists(old_icon_path):
+            try:
+                os.remove(old_icon_path)
+            except Exception:
+                pass  # 삭제 실패해도 계속 진행
+    
+    # 새 파일 저장 (확장자 유지)
+    file_name = f"icon{file_ext}"
+    file_path = os.path.join(icon_dir, file_name)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"파일 저장 실패: {str(e)}"
+        )
+    
+    # 앱 정보 업데이트 (서빙 URL로 저장)
+    app.icon_url = f"/api/apps/{app_id}/icon"
+    
+    db.commit()
+    db.refresh(app)
+    
+    return {"message": "아이콘이 업로드되었습니다", "icon_url": app.icon_url}
+
+
+@router.delete("/{app_id}/icon")
+async def delete_icon(
+    app_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """앱 아이콘 삭제"""
+    app = db.query(App).filter(App.app_id == app_id).first()
+    if not app:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="앱을 찾을 수 없습니다"
+        )
+    
+    if not app.icon_url or not app.icon_url.startswith('/api/apps/'):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록된 아이콘이 없습니다"
+        )
+    
+    # 파일 삭제
+    icon_dir = os.path.join(settings.upload_dir, app_id, "icon")
+    if os.path.exists(icon_dir):
+        try:
+            # 디렉토리 내 모든 파일 삭제
+            for file_name in os.listdir(icon_dir):
+                file_path = os.path.join(icon_dir, file_name)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"파일 삭제 실패: {str(e)}"
+            )
+    
+    # 앱 정보 업데이트
+    app.icon_url = None
+    
+    db.commit()
+    db.refresh(app)
+    
+    return {"message": "아이콘이 삭제되었습니다"}
+
+
+@router.get("/{app_id}/icon")
+async def get_icon(
+    app_id: str,
+    db: Session = Depends(get_db)
+):
+    """앱 아이콘 이미지 서빙"""
+    app = db.query(App).filter(App.app_id == app_id).first()
+    if not app:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="앱을 찾을 수 없습니다"
+        )
+    
+    if not app.icon_url or not app.icon_url.startswith('/api/apps/'):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록된 아이콘이 없습니다"
+        )
+    
+    # 아이콘 파일 찾기
+    icon_dir = os.path.join(settings.upload_dir, app_id, "icon")
+    if not os.path.exists(icon_dir):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="아이콘 파일을 찾을 수 없습니다"
+        )
+    
+    # 디렉토리에서 첫 번째 이미지 파일 찾기
+    icon_file = None
+    for file_name in os.listdir(icon_dir):
+        file_path = os.path.join(icon_dir, file_name)
+        if os.path.isfile(file_path) and file_name.startswith('icon.'):
+            icon_file = file_path
+            break
+    
+    if not icon_file or not os.path.exists(icon_file):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="아이콘 파일을 찾을 수 없습니다"
+        )
+    
+    # 파일 확장자로 MIME 타입 결정
+    ext = os.path.splitext(icon_file)[1].lower()
+    mime_types = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml'
+    }
+    media_type = mime_types.get(ext, 'image/png')
+    
+    return FileResponse(icon_file, media_type=media_type)
 
 
 @router.get("/{app_id}", response_model=AppResponse)
@@ -334,6 +503,68 @@ async def get_public_app(
         manual_download_url=manual_download_url,
         manual_file_name=app.manual_file_name
     )
+
+
+@public_router.get("/public/{app_id}/icon")
+async def get_public_icon(
+    app_id: str,
+    db: Session = Depends(get_db)
+):
+    """공개 앱 아이콘 이미지 서빙 (인증 불필요)"""
+    app = db.query(App).filter(App.app_id == app_id).first()
+    if not app:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="앱을 찾을 수 없습니다"
+        )
+    
+    if not app.is_public:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="비공개 앱입니다"
+        )
+    
+    if not app.icon_url or not app.icon_url.startswith('/api/apps/'):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록된 아이콘이 없습니다"
+        )
+    
+    # 아이콘 파일 찾기
+    icon_dir = os.path.join(settings.upload_dir, app_id, "icon")
+    if not os.path.exists(icon_dir):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="아이콘 파일을 찾을 수 없습니다"
+        )
+    
+    # 디렉토리에서 첫 번째 이미지 파일 찾기
+    icon_file = None
+    for file_name in os.listdir(icon_dir):
+        file_path = os.path.join(icon_dir, file_name)
+        if os.path.isfile(file_path) and file_name.startswith('icon.'):
+            icon_file = file_path
+            break
+    
+    if not icon_file or not os.path.exists(icon_file):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="아이콘 파일을 찾을 수 없습니다"
+        )
+    
+    # 파일 확장자로 MIME 타입 결정
+    ext = os.path.splitext(icon_file)[1].lower()
+    mime_types = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml'
+    }
+    media_type = mime_types.get(ext, 'image/png')
+    
+    return FileResponse(icon_file, media_type=media_type)
 
 
 @public_router.get("/public/{app_id}/manual")

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getApp, updateApp } from '../api/apps'
 import apiClient from '../api/client'
-import { X, FileText, Upload, Globe, Lock, Loader2 } from 'lucide-react'
+import { X, FileText, Upload, Globe, Lock, Loader2, Image, Trash2 } from 'lucide-react'
 
 interface AppSettingsModalProps {
   appId: string
@@ -14,7 +14,10 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
   const queryClient = useQueryClient()
   const [manualFile, setManualFile] = useState<File | null>(null)
   const manualFileInputRef = useRef<HTMLInputElement>(null)
+  const [iconFile, setIconFile] = useState<File | null>(null)
+  const iconFileInputRef = useRef<HTMLInputElement>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeletingIcon, setIsDeletingIcon] = useState(false)
 
   const { data: app, isLoading } = useQuery({
     queryKey: ['app', appId],
@@ -25,6 +28,7 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    group: '',
     icon_url: '',
     is_public: true,
     manual_file_name: '',
@@ -36,12 +40,14 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
       setFormData({
         name: app.name,
         description: app.description || '',
+        group: app.group || '',
         icon_url: app.icon_url || '',
         is_public: app.is_public ?? true,
         manual_file_path: app.manual_file_path || '',
         manual_file_name: app.manual_file_name || '',
       })
       setManualFile(null)
+      setIconFile(null)
     }
   }, [app])
 
@@ -50,6 +56,7 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
       app_id: appId,
       name: formData.name,
       description: formData.description,
+      group: formData.group || undefined,
       icon_url: formData.icon_url,
       is_public: formData.is_public,
     }),
@@ -68,6 +75,34 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
 
   const handleSave = async () => {
     setIsSaving(true)
+    
+    // 아이콘 파일이 있으면 먼저 업로드
+    if (iconFile) {
+      try {
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', iconFile)
+        
+        const response = await apiClient.post(`/apps/${appId}/icon`, uploadFormData, {
+          headers: {
+            'Content-Type': undefined,
+          },
+        })
+        
+        if (response.data?.icon_url) {
+          setFormData(prev => ({
+            ...prev,
+            icon_url: response.data.icon_url
+          }))
+        }
+        
+        await queryClient.invalidateQueries({ queryKey: ['app', appId] })
+        setIconFile(null)
+      } catch (error: any) {
+        setIsSaving(false)
+        alert(error.response?.data?.detail || '아이콘 파일 업로드에 실패했습니다.')
+        return
+      }
+    }
     
     // 설명서 파일이 있으면 먼저 업로드
     if (manualFile) {
@@ -105,6 +140,55 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
   const handleManualFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setManualFile(e.target.files[0])
+    }
+  }
+
+  const handleIconFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      // 이미지 파일인지 확인
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.')
+        return
+      }
+      // 파일 크기 확인 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB 이하여야 합니다.')
+        return
+      }
+      setIconFile(file)
+    }
+  }
+
+  const handleRemoveIconFile = () => {
+    setIconFile(null)
+    if (iconFileInputRef.current) {
+      iconFileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteIcon = async () => {
+    if (!formData.icon_url || !formData.icon_url.startsWith('/api/apps/')) {
+      return
+    }
+    
+    if (!confirm('등록된 아이콘을 삭제하시겠습니까?')) {
+      return
+    }
+    
+    setIsDeletingIcon(true)
+    try {
+      await apiClient.delete(`/apps/${appId}/icon`)
+      await queryClient.invalidateQueries({ queryKey: ['app', appId] })
+      setFormData(prev => ({
+        ...prev,
+        icon_url: ''
+      }))
+      alert('아이콘이 삭제되었습니다.')
+    } catch (error: any) {
+      alert(error.response?.data?.detail || '아이콘 삭제에 실패했습니다.')
+    } finally {
+      setIsDeletingIcon(false)
     }
   }
 
@@ -190,22 +274,137 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">앱 아이콘 URL</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">그룹 (프로젝트명)</label>
                       <input
-                        type="url"
-                        value={formData.icon_url}
-                        onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
-                        placeholder="https://example.com/icon.png"
+                        type="text"
+                        value={formData.group}
+                        onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+                        placeholder="예: 프로젝트A, 팀별 앱 등 (선택사항)"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      {formData.icon_url && (
-                        <img
-                          src={formData.icon_url}
-                          alt="Icon"
-                          className="mt-2 w-16 h-16 rounded-xl object-cover border"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        />
+                      <p className="mt-1 text-xs text-gray-500">
+                        같은 그룹으로 지정하면 공개 페이지에서 그룹별로 표시됩니다.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">앱 아이콘</label>
+                      
+                      {/* 현재 아이콘 표시 */}
+                      {formData.icon_url && formData.icon_url.startsWith('/api/apps/') && !iconFile && (
+                        <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={formData.icon_url}
+                                alt="Icon"
+                                className="w-16 h-16 rounded-xl object-cover border"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div>
+                                <p className="text-sm font-medium text-green-900">✓ 등록된 아이콘</p>
+                                <p className="text-xs text-green-700">저장 시 적용됩니다</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleDeleteIcon}
+                              disabled={isDeletingIcon}
+                              className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                              {isDeletingIcon ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                              삭제
+                            </button>
+                          </div>
+                        </div>
                       )}
+                      
+                      {/* 외부 URL 아이콘 (레거시) */}
+                      {formData.icon_url && !formData.icon_url.startsWith('/api/apps/') && !iconFile && (
+                        <div className="mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={formData.icon_url}
+                                alt="Icon"
+                                className="w-16 h-16 rounded-xl object-cover border"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div>
+                                <p className="text-sm font-medium text-yellow-900">외부 URL 아이콘</p>
+                                <p className="text-xs text-yellow-700">파일 업로드로 변경 권장</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, icon_url: '' })}
+                              className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                            >
+                              <X className="w-4 h-4" />
+                              제거
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 새로 업로드할 아이콘 파일 */}
+                      {iconFile && (
+                        <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Image className="w-16 h-16 text-blue-600" />
+                              <div>
+                                <p className="font-medium text-blue-900">{iconFile.name}</p>
+                                <p className="text-sm text-blue-700">새로 업로드할 파일 (저장 시 적용됩니다)</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleRemoveIconFile}
+                              className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 아이콘 파일이 없는 경우 */}
+                      {!formData.icon_url && !iconFile && (
+                        <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <Image className="w-8 h-8 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-gray-600">아이콘이 등록되지 않았습니다.</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 파일 업로드 버튼 */}
+                      <div>
+                        <input
+                          ref={iconFileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
+                          onChange={handleIconFileChange}
+                          className="hidden"
+                          id="icon-file-input"
+                        />
+                        <label
+                          htmlFor="icon-file-input"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 cursor-pointer transition-colors"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {iconFile || formData.icon_url ? '아이콘 변경' : '아이콘 업로드'}
+                        </label>
+                        <p className="mt-2 text-xs text-gray-500">
+                          PNG, JPG, GIF, WEBP, SVG 형식의 이미지 파일을 업로드할 수 있습니다. (최대 5MB)
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

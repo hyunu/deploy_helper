@@ -38,6 +38,7 @@ export interface AppBase {
   app_id: string;
   name: string;
   description?: string;
+  group?: string;
 }
 
 export interface AppCreate extends AppBase {}
@@ -47,6 +48,7 @@ export interface AppUpdate extends AppBase {
   custom_css?: string;
   icon_url?: string;
   is_public?: boolean;
+  group?: string;
 }
 
 export interface AppResponse extends AppBase {
@@ -57,6 +59,7 @@ export interface AppResponse extends AppBase {
   is_public: boolean;
   manual_file_path?: string;
   manual_file_name?: string;
+  group?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -65,6 +68,7 @@ export interface AppPublicResponse {
   app_id: string;
   name: string;
   description?: string;
+  group?: string;
   detail_html?: string;
   custom_css?: string;
   icon_url?: string;

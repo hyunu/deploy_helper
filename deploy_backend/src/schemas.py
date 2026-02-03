@@ -47,6 +47,7 @@ class AppBase(BaseModel):
     app_id: str
     name: str
     description: Optional[str] = None
+    group: Optional[str] = None
 
 
 class AppCreate(AppBase):
@@ -61,6 +62,7 @@ class AppUpdate(AppBase):
     is_public: bool = True
     manual_file_path: Optional[str] = None
     manual_file_name: Optional[str] = None
+    group: Optional[str] = None
 
 
 class AppResponse(AppBase):
@@ -71,6 +73,7 @@ class AppResponse(AppBase):
     is_public: bool = True
     manual_file_path: Optional[str] = None
     manual_file_name: Optional[str] = None
+    group: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
@@ -83,6 +86,7 @@ class AppPublicResponse(BaseModel):
     app_id: str
     name: str
     description: Optional[str] = None
+    group: Optional[str] = None
     detail_html: Optional[str] = None
     custom_css: Optional[str] = None
     icon_url: Optional[str] = None

@@ -5,6 +5,7 @@ export interface App {
   app_id: string
   name: string
   description: string | null
+  group: string | null
   detail_html: string | null
   custom_css: string | null
   icon_url: string | null
@@ -24,12 +25,14 @@ export interface CreateAppRequest {
   app_id: string
   name: string
   description?: string
+  group?: string
 }
 
 export interface UpdateAppRequest {
   app_id: string
   name: string
   description?: string
+  group?: string
   detail_html?: string
   custom_css?: string
   icon_url?: string
@@ -40,6 +43,7 @@ export interface PublicApp {
   app_id: string
   name: string
   description: string | null
+  group: string | null
   detail_html: string | null
   custom_css: string | null
   icon_url: string | null

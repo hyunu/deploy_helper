@@ -13,6 +13,7 @@ export default function AppsPage() {
     app_id: '',
     name: '',
     description: '',
+    group: '',
   })
   
   const { data: appsData, isLoading } = useQuery({
@@ -25,7 +26,7 @@ export default function AppsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apps'] })
       setIsModalOpen(false)
-      setNewApp({ app_id: '', name: '', description: '' })
+      setNewApp({ app_id: '', name: '', description: '', group: '' })
     },
   })
   
@@ -196,6 +197,22 @@ export default function AppsPage() {
                     rows={3}
                     placeholder="앱에 대한 설명..."
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    그룹 (프로젝트명) (선택)
+                  </label>
+                  <input
+                    type="text"
+                    value={newApp.group || ''}
+                    onChange={(e) => setNewApp({ ...newApp, group: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="예: 프로젝트A, 팀별 앱 등"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    같은 그룹으로 지정하면 공개 페이지에서 그룹별로 표시됩니다.
+                  </p>
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">

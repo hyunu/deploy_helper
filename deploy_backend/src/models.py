@@ -34,6 +34,7 @@ class App(Base):
     app_id = Column(String(100), unique=True, index=True, nullable=False)  # 고유 식별자 (예: com.company.myapp)
     name = Column(String(255), nullable=False)
     description = Column(Text)  # 간단한 설명
+    group = Column(String(100), nullable=True, index=True)  # 앱 그룹 (프로젝트명 등)
     
     # 상세 페이지 설정
     detail_html = Column(Text)  # 상세 페이지 HTML 콘텐츠 (WYSIWYG 에디터로 작성)
