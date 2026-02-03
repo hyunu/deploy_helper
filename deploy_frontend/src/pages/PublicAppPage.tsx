@@ -337,6 +337,24 @@ body, body *, * {
                     <span className="ml-2">({formatBytes(app.file_size)})</span>
                   )}
                 </p>
+                {app.download_url && (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                    <button
+                      onClick={handleDownload}
+                      className="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                    >
+                      다운로드
+                    </button>
+                    {app.manual_download_url && (
+                      <button
+                        onClick={handleManualDownload}
+                        className="inline-flex items-center justify-center px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition"
+                      >
+                        설명서
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

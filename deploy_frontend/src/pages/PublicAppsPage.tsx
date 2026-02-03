@@ -8,16 +8,29 @@ export default function PublicAppsPage() {
   const { data: appsData, isLoading, error } = useQuery({
     queryKey: ['publicApps'],
     queryFn: getPublicAppsList,
+    staleTime: 0, // 캐시 무효화
+    gcTime: 0, // 캐시 시간 0으로 설정 (React Query v5)
   })
 
-  // 그룹별로 앱을 분류
+  // 그룹별로 앱을 분류 (중복 제거)
   const groupedApps = useMemo(() => {
-    if (!appsData?.apps) return null
+    if (!appsData?.apps || !Array.isArray(appsData.apps)) return null
+
+    // app_id 기준으로 중복 제거 (더 강력한 중복 제거)
+    const seen = new Set<string>()
+    const uniqueApps: typeof appsData.apps = []
+    
+    appsData.apps.forEach((app) => {
+      if (app && app.app_id && !seen.has(app.app_id)) {
+        seen.add(app.app_id)
+        uniqueApps.push(app)
+      }
+    })
 
     const groups: Record<string, typeof appsData.apps> = {}
     const ungrouped: typeof appsData.apps = []
 
-    appsData.apps.forEach((app) => {
+    uniqueApps.forEach((app) => {
       if (app.group && app.group.trim()) {
         const groupName = app.group.trim()
         if (!groups[groupName]) {
@@ -104,6 +117,7 @@ export default function PublicAppsPage() {
             {/* 그룹이 없는 앱들 */}
             {groupedApps && groupedApps.ungrouped.length > 0 && (
               <div className="space-y-4">
+                {/* 그룹이 있을 때만 "기타" 헤더 표시 */}
                 {Object.keys(groupedApps.groups).length > 0 && (
                   <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
                     <Package className="w-5 h-5 text-gray-600" />
@@ -116,15 +130,6 @@ export default function PublicAppsPage() {
                     <AppCard key={app.app_id} app={app} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 그룹이 하나도 없으면 기존 방식으로 표시 */}
-            {groupedApps && Object.keys(groupedApps.groups).length === 0 && groupedApps.ungrouped.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {groupedApps.ungrouped.map((app) => (
-                  <AppCard key={app.app_id} app={app} />
-                ))}
               </div>
             )}
           </>

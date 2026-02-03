@@ -3,7 +3,7 @@ import shutil
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, and_
+from sqlalchemy import func, desc, and_, exists
 
 from ..database import get_db
 from ..models import App, AppVersion, User, ReleaseChannel
@@ -374,17 +374,17 @@ async def get_public_apps_list(
     공개 앱 목록 조회 (인증 불필요)
     활성화된 버전이 있는 앱만 반환
     """
-    # 활성화된 버전이 있는 공개 앱만 조회
-    query = db.query(App).join(
-        AppVersion,
-        and_(
-            AppVersion.app_id == App.id,
-            AppVersion.is_active == True,
-            AppVersion.channel == ReleaseChannel.STABLE
+    # EXISTS를 사용하여 활성화된 버전이 있는 공개 앱만 조회 (중복 방지)
+    query = db.query(App).filter(
+        App.is_public == True,
+        exists().where(
+            and_(
+                AppVersion.app_id == App.id,
+                AppVersion.is_active == True,
+                AppVersion.channel == ReleaseChannel.STABLE
+            )
         )
-    ).filter(
-        App.is_public == True
-    ).distinct()
+    )
     
     total = query.count()
     apps = query.offset(skip).limit(limit).all()
@@ -495,6 +495,7 @@ async def get_public_app(
         app_id=app.app_id,
         name=app.name,
         description=app.description,
+        group=app.group,
         detail_html=detail_html,
         custom_css=app.custom_css,
         icon_url=app.icon_url,
