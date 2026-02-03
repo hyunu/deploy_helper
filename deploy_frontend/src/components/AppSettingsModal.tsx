@@ -146,9 +146,11 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
   const handleIconFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      // 이미지 파일인지 확인
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.')
+      // 이미지 파일인지 확인 (ico 파일은 type이 비어있을 수 있으므로 확장자도 확인)
+      const fileExt = file.name.toLowerCase().split('.').pop()
+      const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico']
+      if (!file.type.startsWith('image/') && !allowedExtensions.includes(fileExt || '')) {
+        alert('이미지 파일만 업로드 가능합니다. (PNG, JPG, GIF, WEBP, SVG, ICO)')
         return
       }
       // 파일 크기 확인 (5MB)
@@ -389,7 +391,7 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
                         <input
                           ref={iconFileInputRef}
                           type="file"
-                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
                           onChange={handleIconFileChange}
                           className="hidden"
                           id="icon-file-input"
@@ -402,7 +404,7 @@ export default function AppSettingsModal({ appId, isOpen, onClose }: AppSettings
                           {iconFile || formData.icon_url ? '아이콘 변경' : '아이콘 업로드'}
                         </label>
                         <p className="mt-2 text-xs text-gray-500">
-                          PNG, JPG, GIF, WEBP, SVG 형식의 이미지 파일을 업로드할 수 있습니다. (최대 5MB)
+                          PNG, JPG, GIF, WEBP, SVG, ICO 형식의 이미지 파일을 업로드할 수 있습니다. (최대 5MB)
                         </p>
                       </div>
                     </div>

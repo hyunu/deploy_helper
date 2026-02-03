@@ -156,7 +156,7 @@ async def upload_icon(
         )
     
     # 이미지 파일 확장자 확인
-    allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
+    allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico'}
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in allowed_extensions:
         raise HTTPException(
@@ -302,7 +302,8 @@ async def get_icon(
         '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
         '.webp': 'image/webp',
-        '.svg': 'image/svg+xml'
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon'
     }
     media_type = mime_types.get(ext, 'image/png')
     
@@ -560,7 +561,8 @@ async def get_public_icon(
         '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
         '.webp': 'image/webp',
-        '.svg': 'image/svg+xml'
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon'
     }
     media_type = mime_types.get(ext, 'image/png')
     
